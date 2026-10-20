@@ -45,6 +45,7 @@ class User(AbstractUser):
 # PARKING LOCATION
 # ---------------------------------------------------------
 
+
 class ParkingLocation(models.Model):
 
     manager = models.OneToOneField(
@@ -61,6 +62,32 @@ class ParkingLocation(models.Model):
     city = models.CharField(max_length=100)
 
     status = models.BooleanField(default=True)
+
+    # Two-wheeler parking rates
+    two_wheeler_base_rate = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=30.00
+    )
+
+    two_wheeler_extra_hour_rate = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=10.00
+    )
+
+    # Four-wheeler parking rates
+    four_wheeler_base_rate = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=60.00
+    )
+
+    four_wheeler_extra_hour_rate = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=20.00
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -206,6 +233,12 @@ class Payment(models.Model):
         ('upi', 'UPI'),
     )
 
+    REFUND_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('refunded', 'Refunded'),
+        ('not_applicable', 'Not Applicable'),
+    )
+
     booking = models.OneToOneField(
         Booking,
         on_delete=models.CASCADE,
@@ -267,8 +300,28 @@ class Payment(models.Model):
         default=0
     )
 
+    # Cancellation refund and charge
+    refund_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    cancellation_charge = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    refund_status = models.CharField(
+        max_length=20,
+        choices=REFUND_STATUS_CHOICES,
+        default='not_applicable'
+    )
+
     def __str__(self):
         return f"Payment for Booking #{self.booking.id}"
+
 # ---------------------------------------------------------
 # COMPLAINT
 # ---------------------------------------------------------

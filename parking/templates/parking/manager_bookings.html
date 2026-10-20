@@ -1,309 +1,379 @@
-<!DOCTYPE html>
 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ParkGrid | Manager Bookings</title>
 
-```
-<style>
-    * {
-        box-sizing: border-box;
-    }
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f5f7fb;
-        color: #222;
-    }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
 
-    .container {
-        max-width: 1250px;
-        margin: 40px auto;
-        padding: 20px;
-    }
-
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        gap: 15px;
-    }
-
-    h1 {
-        color: #1e5eff;
-        margin: 0;
-    }
-
-    .subtitle {
-        color: #777;
-        margin-top: 6px;
-        font-size: 14px;
-    }
-
-    .back-btn {
-        text-decoration: none;
-        background: #1e5eff;
-        color: white;
-        padding: 10px 18px;
-        border-radius: 8px;
-    }
-
-    .card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
-
-    .message {
-        background: #e7f8ed;
-        color: #16833a;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-
-    .table-container {
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 1100px;
-    }
-
-    th {
-        background: #f0f4ff;
-        color: #1e5eff;
-        padding: 14px;
-        text-align: left;
-        font-size: 13px;
-    }
-
-    td {
-        padding: 14px;
-        border-bottom: 1px solid #eee;
-        font-size: 13px;
-        vertical-align: middle;
-    }
-
-    tr:hover {
-        background: #fafbff;
-    }
-
-    .status {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    .reserved {
-        background: #fff4d6;
-        color: #a66a00;
-    }
-
-    .active {
-        background: #e7f8ed;
-        color: #16833a;
-    }
-
-    .completed {
-        background: #e8eefc;
-        color: #3456a3;
-    }
-
-    .expired {
-        background: #ffe8e8;
-        color: #c62828;
-    }
-
-    .cancelled {
-        background: #eeeeee;
-        color: #666;
-    }
-
-    .payment-paid {
-        color: #16833a;
-        font-weight: bold;
-    }
-
-    .payment-pending {
-        color: #a66a00;
-        font-weight: bold;
-    }
-
-    .action-btn {
-        display: inline-block;
-        text-decoration: none;
-        background: #1e5eff;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-    }
-
-    .empty {
-        text-align: center;
-        color: #777;
-        padding: 40px;
-    }
-
-    @media (max-width: 700px) {
         .container {
-            margin: 20px auto;
-            padding: 12px;
+            max-width: 1250px;
+            margin: 40px auto;
+            padding: 20px;
         }
 
         .header {
-            flex-direction: column;
-            align-items: flex-start;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 15px;
         }
-    }
-</style>
-```
 
+        h1 {
+            color: #1e5eff;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #777;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            background: #1e5eff;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .message {
+            background: #e7f8ed;
+            color: #16833a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        th {
+            background: #f0f4ff;
+            color: #1e5eff;
+            padding: 14px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background: #fafbff;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .reserved {
+            background: #fff4d6;
+            color: #a66a00;
+        }
+
+        .active {
+            background: #e7f8ed;
+            color: #16833a;
+        }
+
+        .completed {
+            background: #e8eefc;
+            color: #3456a3;
+        }
+
+        .expired {
+            background: #ffe8e8;
+            color: #c62828;
+        }
+
+        .cancelled {
+            background: #eeeeee;
+            color: #666;
+        }
+
+        .payment-paid {
+            color: #16833a;
+            font-weight: bold;
+        }
+
+        .payment-pending {
+            color: #a66a00;
+            font-weight: bold;
+        }
+
+        .action-btn {
+            display: inline-block;
+            border: none;
+            text-decoration: none;
+            background: #1e5eff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            white-space: nowrap;
+        }
+
+        .exit-btn {
+            background: #16833a;
+        }
+
+        .qr-btn {
+            background: #6546c7;
+        }
+
+        .action-form {
+            display: inline-block;
+            margin: 2px;
+        }
+
+        .action-text {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 40px;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                margin: 20px auto;
+                padding: 12px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 
 <body>
-
 <div class="container">
 
-```
-<div class="header">
+    <div class="header">
+        <div>
+            <h1>📅 Bookings</h1>
 
-    <div>
-        <h1>📅 Bookings</h1>
+            {% if location %}
+                <div class="subtitle">
+                    {{ location.name }} — {{ location.city }}
+                </div>
+            {% endif %}
+        </div>
 
-        {% if location %}
-            <div class="subtitle">
-                {{ location.name }} — {{ location.city }}
-            </div>
-        {% endif %}
+        <a href="{% url 'manager_dashboard' %}" class="back-btn">
+            ← Dashboard
+        </a>
     </div>
 
-    <a href="{% url 'manager_dashboard' %}" class="back-btn">
-        ← Dashboard
-    </a>
-
-</div>
-
-
-{% if messages %}
-    {% for message in messages %}
-        <div class="message">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endif %}
-
-
-<div class="card">
-
-    {% if bookings %}
-
-        <div class="table-container">
-
-            <table>
-
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Customer</th>
-                        <th>Vehicle</th>
-                        <th>Slot</th>
-                        <th>Arrival</th>
-                        <th>Booked Duration</th>
-                        <th>Advance</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                {% for booking in bookings %}
-
-                    <tr>
-
-                        <td>
-                            #{{ booking.id }}
-                        </td>
-
-                        <td>
-                            {{ booking.user.first_name|default:booking.user.username }}
-                        </td>
-
-                        <td>
-                            {{ booking.vehicle_number }}<br>
-                            {{ booking.get_vehicle_type_display }}
-                        </td>
-
-                        <td>
-                            {{ booking.slot.slot_number }}
-                        </td>
-
-                        <td>
-                            {{ booking.expected_arrival|date:"d M Y, h:i A" }}
-                        </td>
-
-                        <td>
-                            {% widthratio booking.reservation_expiry|timeuntil:booking.expected_arrival 1 1 %}
-                        </td>
-
-                        <td>
-                            {% if booking.payment %}
-                                <span class="payment-paid">
-                                    ₹{{ booking.payment.advance_amount }}
-                                </span>
-                            {% else %}
-                                <span class="payment-pending">
-                                    Not Paid
-                                </span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <span class="status {{ booking.status }}">
-                                {{ booking.get_status_display }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <a href="{% url 'scan_qr' booking.id %}" class="action-btn">
-                                View QR
-                            </a>
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    {% else %}
-
-        <div class="empty">
-            <h3>No bookings found</h3>
-            <p>Customer bookings for your parking facility will appear here.</p>
-        </div>
-
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message">
+                {{ message }}
+            </div>
+        {% endfor %}
     {% endif %}
 
-</div>
-```
+    <div class="card">
 
-</div>
+        {% if bookings %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Vehicle</th>
+                            <th>Slot</th>
+                            <th>Arrival</th>
+                            <th>Booked Duration</th>
+                            <th>Advance</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
+                    <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>#{{ booking.id }}</td>
+
+                            <td>
+                                {{ booking.user.first_name|default:booking.user.username }}
+                            </td>
+
+                            <td>
+                                {{ booking.vehicle_number }}<br>
+                                {{ booking.get_vehicle_type_display }}
+                            </td>
+
+                            <td>
+                                {{ booking.slot.slot_number }}
+                            </td>
+
+                            <td>
+                                {{ booking.expected_arrival|date:"d M Y, h:i A" }}
+                            </td>
+
+                            <td>
+                                {% widthratio booking.reservation_expiry|timeuntil:booking.expected_arrival 1 1 %}
+                            </td>
+
+                            <td>
+                                {% if booking.payment %}
+                                    {% if booking.payment.advance_status == 'paid' %}
+                                        <span class="payment-paid">
+                                            ₹{{ booking.payment.advance_amount }}
+                                        </span>
+                                    {% else %}
+                                        <span class="payment-pending">
+                                            Pending
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="payment-pending">
+                                        Not Paid
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <span class="status {{ booking.status }}">
+                                    {{ booking.get_status_display }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if booking.status == 'reserved' %}
+
+                                    <a
+                                        href="{% url 'scan_qr' booking.id %}"
+                                        class="action-btn qr-btn"
+                                    >
+                                        View QR
+                                    </a>
+
+                                    {% if booking.payment and booking.payment.advance_status == 'paid' %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'manager_mark_entry' booking.id %}"
+                                            class="action-form"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="action-btn">
+                                                Mark Entry
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <div class="action-text">
+                                            Awaiting advance payment
+                                        </div>
+                                    {% endif %}
+
+                                {% elif booking.status == 'active' %}
+
+                                    {% if not booking.actual_exit_time %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'manager_mark_exit' booking.id %}"
+                                            class="action-form"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="action-btn exit-btn">
+                                                Mark Exit
+                                            </button>
+                                        </form>
+                                    {% elif booking.payment and booking.payment.balance_amount > 0 %}
+                                        <span class="payment-pending">
+                                            Balance ₹{{ booking.payment.balance_amount }} pending
+                                        </span>
+                                    {% else %}
+                                        <span class="action-text">
+                                            Exit recorded
+                                        </span>
+                                    {% endif %}
+
+                                {% elif booking.status == 'completed' %}
+
+                                    <span class="payment-paid">
+                                        Completed
+                                    </span>
+
+                                {% elif booking.status == 'expired' %}
+
+                                    <span class="action-text">
+                                        Expired
+                                    </span>
+
+                                {% elif booking.status == 'cancelled' %}
+
+                                    <span class="action-text">
+                                        Cancelled
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="action-text">-</span>
+
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <div class="empty">
+                <h3>No bookings found</h3>
+                <p>Customer bookings for your parking facility will appear here.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
 </body>
 </html>

@@ -68,26 +68,48 @@
 
         .value {
             font-weight: 600;
+            text-align: right;
         }
 
         .amount-box {
             background: #edf7f6;
             border-radius: 10px;
             padding: 20px;
-            text-align: center;
             margin-bottom: 25px;
+        }
+
+        .amount-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #d5eae8;
+        }
+
+        .amount-row:last-child {
+            border-bottom: none;
         }
 
         .amount-label {
             color: #087f8c;
-            font-size: 13px;
-            margin-bottom: 6px;
+            font-size: 14px;
         }
 
         .amount {
             color: #102a43;
-            font-size: 32px;
+            font-size: 20px;
             font-weight: 700;
+            text-align: right;
+        }
+
+        .advance-row {
+            margin-top: 8px;
+            padding-top: 16px;
+        }
+
+        .advance-row .amount {
+            color: #087f8c;
+            font-size: 28px;
         }
 
         .payment-title {
@@ -159,21 +181,29 @@
                 flex-direction: column;
                 gap: 5px;
             }
+
+            .value {
+                text-align: left;
+            }
         }
     </style>
 </head>
 
 <body>
-
 <div class="container">
-
     <div class="card">
 
-        <h1>Advance Payment</h1>
-
-        <p class="subtitle">
-            Complete the advance payment to confirm your parking reservation.
-        </p>
+        {% if is_balance_payment %}
+            <h1>Balance Payment</h1>
+            <p class="subtitle">
+                Complete the remaining payment to finish your parking booking.
+            </p>
+        {% else %}
+            <h1>Advance Payment</h1>
+            <p class="subtitle">
+                Review the full parking amount and pay the advance to confirm your reservation.
+            </p>
+        {% endif %}
 
         <div class="details">
 
@@ -202,22 +232,47 @@
                 <span class="value">{{ booking.vehicle_type }}</span>
             </div>
 
+            {% if booked_duration_display %}
+            <div class="row">
+                <span class="label">Booked Duration</span>
+                <span class="value">{{ booked_duration_display }}</span>
+            </div>
+            {% endif %}
+
         </div>
 
         <div class="amount-box">
 
-            <div class="amount-label">
-                Advance Amount
-            </div>
+            {% if is_balance_payment %}
 
-            <div class="amount">
-                ₹{{ advance_amount }}
-            </div>
+                <div class="amount-row">
+                    <span class="amount-label">Remaining Balance</span>
+                    <span class="amount">
+                        ₹{{ balance_amount|floatformat:2 }}
+                    </span>
+                </div>
+
+            {% else %}
+
+                <div class="amount-row">
+                    <span class="amount-label">Full Parking Amount</span>
+                    <span class="amount">
+                        ₹{{ full_amount|floatformat:2 }}
+                    </span>
+                </div>
+
+                <div class="amount-row advance-row">
+                    <span class="amount-label">Advance Amount to Pay</span>
+                    <span class="amount">
+                        ₹{{ advance_amount|floatformat:2 }}
+                    </span>
+                </div>
+
+            {% endif %}
 
         </div>
 
         <form method="POST">
-
             {% csrf_token %}
 
             <div class="payment-title">
@@ -241,6 +296,7 @@
                         type="radio"
                         name="payment_method"
                         value="phonepe"
+                        required
                     >
                     PhonePe
                 </label>
@@ -250,26 +306,31 @@
                         type="radio"
                         name="payment_method"
                         value="upi"
+                        required
                     >
                     UPI
                 </label>
 
             </div>
 
-            <button type="submit" class="pay-btn">
-                Pay Advance & Continue
-            </button>
+            {% if is_balance_payment %}
+                <button type="submit" class="pay-btn">
+                    Pay Balance
+                </button>
+            {% else %}
+                <button type="submit" class="pay-btn">
+                    Pay Advance &amp; Continue
+                </button>
+            {% endif %}
 
         </form>
 
         <p class="note">
-            This is an advance payment. The final parking amount will be
-            calculated based on the actual parking duration at exit.
+            This is a demo payment flow. The final parking charge depends on
+            the applicable parking rates and actual parking duration.
         </p>
 
     </div>
-
 </div>
-
 </body>
 </html>

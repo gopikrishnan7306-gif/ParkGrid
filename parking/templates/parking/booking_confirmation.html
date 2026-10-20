@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -241,6 +242,23 @@
             text-align: right;
         }
 
+        .amount-row {
+            background: #f7fbfc;
+        }
+
+        .total-row {
+            background: #edf7f6;
+        }
+
+        .total-row span:last-child {
+            color: #087f8c;
+            font-size: 15px;
+        }
+
+        .advance-row span:last-child {
+            color: #147d64;
+        }
+
         .status {
             color: #147d64 !important;
         }
@@ -277,6 +295,13 @@
 
         .secondary-btn:hover {
             background: #d8f3ef;
+        }
+
+        .note {
+            margin-top: 20px;
+            color: #7b8794;
+            font-size: 12px;
+            line-height: 1.6;
         }
 
         .footer {
@@ -349,8 +374,6 @@
                 Find Parking
             </a>
 
-            
-
             <a href="/booking-history/">
                 <span class="menu-icon">◷</span>
                 Booking History
@@ -383,7 +406,6 @@
 
     </aside>
 
-
     <div class="main">
 
         <header class="topbar">
@@ -406,7 +428,6 @@
 
         </header>
 
-
         <main class="content">
 
             <div class="confirmation-card">
@@ -424,7 +445,6 @@
                 <div class="booking-number">
                     Booking ID: #{{ booking.id }}
                 </div>
-
 
                 <div class="details">
 
@@ -445,7 +465,7 @@
 
                     <div class="detail-row">
                         <span>Vehicle Type</span>
-                        <span>Four Wheeler</span>
+                        <span>{{ booking.get_vehicle_type_display|default:booking.vehicle_type }}</span>
                     </div>
 
                     <div class="detail-row">
@@ -459,29 +479,56 @@
                     </div>
 
                     <div class="detail-row">
+                        <span>Booked Duration</span>
+                        <span>{{ booked_duration_display }}</span>
+                    </div>
+
+                    <div class="detail-row amount-row total-row">
+                        <span>Full Estimated Parking Amount</span>
+                        <span>₹{{ full_amount|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="detail-row amount-row advance-row">
+                        <span>Advance Amount to Pay</span>
+                        <span>₹{{ advance_amount|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="detail-row amount-row">
+                        <span>Remaining Estimated Amount</span>
+                        <span>₹{{ remaining_amount|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="detail-row">
                         <span>Status</span>
                         <span class="status">{{ booking.get_status_display }}</span>
                     </div>
 
                 </div>
 
-
                 <div class="buttons">
 
-                   <a href="{% url 'advance_payment' booking.id %}" class="btn primary-btn">
-    Pay Advance & Continue
-</a>
+                    <a href="{% url 'advance_payment' booking.id %}"
+                       class="btn primary-btn">
+                        Pay Advance &amp; Continue
+                    </a>
 
-                    <a href="/user/dashboard/" class="btn secondary-btn">
+                    <a href="/user/dashboard/"
+                       class="btn secondary-btn">
                         Back to Dashboard
                     </a>
 
                 </div>
 
+                <p class="note">
+                    The parking amount shown is an estimate based on your
+                    booked duration and the selected parking facility's rates.
+                    Any applicable extra-time charges will be calculated when
+                    your parking exit is recorded.
+                </p>
+
             </div>
 
         </main>
-
 
         <footer class="footer">
             © 2026 ParkGrid · Customer Parking Portal
@@ -491,3 +538,4 @@
 
 </body>
 </html>
+```

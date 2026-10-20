@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Verification | ParkGrid</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2457d6;
+            --primary-dark: #1945b5;
+            --text: #172033;
+            --muted: #68758a;
+            --border: #e5eaf2;
+            --background: #f5f7fb;
+            --success: #13865c;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Inter, -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", Arial, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        .page {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .brand {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .brand-name {
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+        }
+
+        .brand-name span {
+            color: var(--primary);
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 12px 35px rgba(24, 43, 80, 0.06);
+        }
+
+        .secure-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            color: var(--success);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+        }
+
+        .secure-label svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        h1 {
+            margin: 17px 0 8px;
+            text-align: center;
+            font-size: 25px;
+            letter-spacing: -0.6px;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .payment-summary {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f7f9ff;
+            border: 1px solid #e5ebff;
+            border-radius: 14px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .amount {
+            margin: 7px 0 16px;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .summary-divider {
+            border: 0;
+            border-top: 1px solid #e3e8f4;
+            margin: 0 0 13px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+
+        .summary-row span:first-child {
+            color: var(--muted);
+        }
+
+        .summary-row span:last-child {
+            text-align: right;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .pin-heading {
+            margin: 0 0 8px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .pin-description {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .error {
+            margin: 0 0 14px;
+            padding: 11px 12px;
+            color: #b42318;
+            background: #fff1f0;
+            border-radius: 9px;
+            font-size: 13px;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 11px;
+            outline: none;
+            font-size: 24px;
+            letter-spacing: 12px;
+            text-align: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.12);
+        }
+
+        .primary-button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 18px;
+            padding: 15px;
+            border: none;
+            border-radius: 11px;
+            background: var(--primary);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .primary-button:hover {
+            background: var(--primary-dark);
+        }
+
+        .primary-button:active {
+            transform: scale(0.99);
+        }
+
+        .footer {
+            margin: 18px 0 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 380px) {
+            .card {
+                padding: 22px 18px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+
+            .amount {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <div class="brand">
+            <div class="brand-mark">P</div>
+            <div class="brand-name">Park<span>Grid</span></div>
+        </div>
+
+        <section class="card">
+            <div class="secure-label">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                    <rect x="4" y="10" width="16" height="11" rx="2"/>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                </svg>
+                Secure payment verification
+            </div>
+
+            <h1>Verify your payment</h1>
+            <p class="subtitle">
+                Confirm your payment to continue with your parking reservation.
+            </p>
+
+            <div class="payment-summary">
+                <div class="summary-label">Amount payable</div>
+                <div class="amount">₹{{ advance_amount }}</div>
+
+                <hr class="summary-divider">
+
+                <div class="summary-row">
+                    <span>Booking ID</span>
+                    <span>#{{ booking.id }}</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Payment method</span>
+                    <span>{{ payment_method|title }}</span>
+                </div>
+            </div>
+
+            <h2 class="pin-heading">Enter verification PIN</h2>
+            <p class="pin-description">
+                Enter your four-digit verification PIN to complete this step.
+            </p>
+
+            {% if error %}
+                <div class="error" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="payment_method"
+                    value="{{ payment_method }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="stage"
+                    value="confirm_payment"
+                >
+
+                <input
+                    class="pin-input"
+                    type="password"
+                    id="demo_pin"
+                    name="demo_pin"
+                    placeholder="••••"
+                    maxlength="4"
+                    inputmode="numeric"
+                    pattern="[0-9]{4}"
+                    autocomplete="off"
+                    aria-label="Four-digit verification PIN"
+                    required
+                >
+
+                <button class="primary-button" type="submit">
+                    Confirm payment
+                    <span aria-hidden="true">→</span>
+                </button>
+            </form>
+        </section>
+
+        <p class="footer">
+            ParkGrid · Parking made simple<br>
+            Payment confirmation is simulated in this project; no real money is transferred.
+        </p>
+    </main>
+</body>
+</html>

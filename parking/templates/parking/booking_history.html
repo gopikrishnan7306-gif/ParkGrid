@@ -1,15 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Booking History | ParkGrid</title>
 
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -22,11 +19,6 @@
             color: #243b53;
         }
 
-
-        /* =========================
-           SIDEBAR
-        ========================= */
-
         .sidebar {
             position: fixed;
             left: 0;
@@ -36,16 +28,17 @@
             background: #102a43;
             color: white;
             padding: 28px 18px;
+            overflow-y: auto;
         }
 
         .brand {
             padding: 0 14px 35px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
+            border-bottom: 1px solid rgba(255,255,255,.12);
         }
 
         .brand h1 {
             font-size: 27px;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
         }
 
         .brand span {
@@ -57,11 +50,6 @@
             color: #9fb3c8;
             font-size: 12px;
         }
-
-
-        /* =========================
-           MENU
-        ========================= */
 
         .menu {
             margin-top: 30px;
@@ -86,7 +74,6 @@
             color: #d9e2ec;
             text-decoration: none;
             font-size: 14px;
-            transition: 0.2s;
         }
 
         .menu a:hover {
@@ -105,11 +92,6 @@
             font-size: 16px;
         }
 
-
-        /* =========================
-           LOGOUT
-        ========================= */
-
         .sidebar-bottom {
             position: absolute;
             bottom: 25px;
@@ -118,7 +100,7 @@
         }
 
         .logout {
-            border-top: 1px solid rgba(255,255,255,0.12);
+            border-top: 1px solid rgba(255,255,255,.12);
             padding-top: 18px;
         }
 
@@ -126,29 +108,20 @@
             color: #ffb4b4 !important;
         }
 
-
-        /* =========================
-           MAIN
-        ========================= */
-
         .main {
             margin-left: 245px;
             min-height: 100vh;
         }
 
-
-        /* =========================
-           TOPBAR
-        ========================= */
-
         .topbar {
-            height: 76px;
+            min-height: 76px;
             background: white;
             border-bottom: 1px solid #e1e8ed;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 40px;
+            padding: 15px 35px;
+            gap: 15px;
         }
 
         .page-title h2 {
@@ -176,7 +149,6 @@
         .customer-info strong {
             display: block;
             font-size: 14px;
-            color: #243b53;
         }
 
         .customer-info span {
@@ -193,25 +165,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
         }
 
-
-        /* =========================
-           CONTENT
-        ========================= */
-
         .content {
-            padding: 35px 40px;
-            max-width: 1400px;
+            padding: 32px 35px;
+            max-width: 1600px;
         }
 
         .page-heading {
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         .page-heading h1 {
-            font-size: 28px;
+            font-size: 27px;
             font-weight: 600;
             color: #102a43;
             margin-bottom: 8px;
@@ -222,146 +188,221 @@
             font-size: 14px;
         }
 
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-        /* =========================
-           BOOKING CARD
-        ========================= */
+        .summary-card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 11px;
+            padding: 20px;
+            box-shadow: 0 3px 12px rgba(16,42,67,.04);
+        }
 
-        .history-card {
+        .summary-card span {
+            color: #829ab1;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 8px;
+            color: #102a43;
+            font-size: 25px;
+        }
+
+        .history-panel {
             background: white;
             border: 1px solid #e1e8ed;
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(16,42,67,0.07);
-            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(16,42,67,.05);
+            overflow: hidden;
         }
 
-        .history-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16,42,67,0.09);
-        }
-
-
-        /* =========================
-           BOOKING HEADER
-        ========================= */
-
-        .booking-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 17px;
+        .panel-heading {
+            padding: 22px 24px;
             border-bottom: 1px solid #edf1f4;
         }
 
-        .booking-header h3 {
-            font-size: 18px;
+        .panel-heading h3 {
             color: #102a43;
-            font-weight: 600;
+            font-size: 17px;
         }
 
+        .panel-heading p {
+            color: #829ab1;
+            font-size: 12px;
+            margin-top: 5px;
+        }
 
-        /* =========================
-           STATUS
-        ========================= */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 18px 24px;
+            background: #fbfcfd;
+            border-bottom: 1px solid #edf1f4;
+        }
+
+        .filters input,
+        .filters select {
+            min-height: 42px;
+            padding: 10px 12px;
+            border: 1px solid #d9e2ec;
+            border-radius: 7px;
+            background: white;
+            color: #243b53;
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .filters input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filters select {
+            min-width: 165px;
+        }
+
+        .filters input:focus,
+        .filters select:focus {
+            outline: 2px solid #b7e7e2;
+            border-color: #167d8d;
+        }
+
+        .record-count {
+            padding: 14px 24px 0;
+            color: #829ab1;
+            font-size: 12px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        thead {
+            background: #f7f9fb;
+        }
+
+        th {
+            padding: 14px 16px;
+            color: #627d98;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            font-weight: 600;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        td {
+            padding: 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #edf1f4;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: #f8fbfc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .booking-id {
+            font-weight: 700;
+            color: #087f8c;
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: #243b53;
+        }
+
+        .subtext {
+            display: block;
+            color: #829ab1;
+            font-size: 11px;
+            margin-top: 5px;
+        }
 
         .status {
-            padding: 6px 12px;
+            display: inline-block;
+            padding: 6px 10px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
         }
 
-        .reserved {
-            background: #e8f4ff;
-            color: #2563eb;
-        }
-
-        .active {
-            background: #e8f8f1;
-            color: #16805c;
-        }
-
-        .completed {
+        .status.completed {
             background: #e6f7f1;
             color: #087f8c;
         }
 
-        .cancelled {
+        .status.cancelled {
             background: #ffecec;
             color: #c0392b;
         }
 
-        .expired {
-            background: #fff4e5;
-            color: #b45309;
-        }
-
-
-        /* =========================
-           BOOKING INFORMATION
-        ========================= */
-
-        .booking-info {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-        }
-
-        .info-item {
-            background: #f7f9fb;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .info-item span {
-            display: block;
-            color: #829ab1;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-bottom: 6px;
-        }
-
-        .info-item strong {
-            color: #243b53;
-            font-size: 14px;
+        .payment-main {
             font-weight: 600;
+            color: #243b53;
         }
 
+        .payment-sub {
+            display: block;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #829ab1;
+        }
 
-        /* =========================
-           ACTION
-        ========================= */
+        .refund-amount {
+            color: #087f8c;
+            font-weight: 700;
+        }
 
-        .booking-actions {
-            margin-top: 20px;
-            padding-top: 18px;
-            border-top: 1px solid #edf1f4;
+        .cancellation-charge {
+            color: #b45309;
+            font-weight: 700;
+        }
+
+        .action-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
         }
 
         .action-button {
             display: inline-block;
-            padding: 10px 18px;
+            padding: 9px 12px;
             background: #167d8d;
             color: white;
             text-decoration: none;
-            border-radius: 7px;
-            font-size: 13px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 600;
-            transition: 0.2s;
+            cursor: pointer;
         }
 
         .action-button:hover {
             background: #126875;
         }
-
-
-        /* =========================
-           EMPTY STATE
-        ========================= */
 
         .empty-card {
             background: white;
@@ -369,7 +410,6 @@
             border-radius: 12px;
             padding: 55px 25px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(16,42,67,0.07);
         }
 
         .empty-icon {
@@ -388,7 +428,6 @@
         .empty-card h3 {
             color: #102a43;
             margin-bottom: 8px;
-            font-size: 19px;
         }
 
         .empty-card p {
@@ -408,38 +447,143 @@
             font-weight: 600;
         }
 
-        .find-button:hover {
-            background: #126875;
+        .no-results {
+            display: none;
+            text-align: center;
+            padding: 35px 20px;
+            color: #829ab1;
+            font-size: 14px;
         }
 
-
-        /* =========================
-           FOOTER
-        ========================= */
-
         .footer {
-            padding: 30px 40px;
+            padding: 30px 35px;
             color: #829ab1;
             font-size: 11px;
             text-align: center;
         }
 
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
-
-        @media (max-width: 1050px) {
-
-            .booking-info {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
+        .message {
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background: #e8f4ff;
+            color: #243b53;
         }
 
+        /* Booking details popup */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(16,42,67,.65);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            max-width: 500px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 35px rgba(0,0,0,.2);
+        }
+
+        .modal-header {
+            padding: 22px 25px;
+            background: #102a43;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+        }
+
+        .modal-header p {
+            color: #b7c9d9;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 26px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: #087f8c;
+            font-weight: 700;
+            margin: 18px 0 10px;
+        }
+
+        .detail-section-title:first-child {
+            margin-top: 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 11px 0;
+            border-bottom: 1px solid #edf1f4;
+            font-size: 13px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #627d98;
+        }
+
+        .detail-value {
+            color: #102a43;
+            font-weight: 600;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            background: #f7f9fb;
+            border-top: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                padding: 28px 22px;
+            }
+
+            .summary {
+                gap: 10px;
+            }
+
+            th, td {
+                padding: 13px 11px;
+            }
+        }
 
         @media (max-width: 750px) {
-
             .sidebar {
                 position: relative;
                 width: 100%;
@@ -456,343 +600,560 @@
             }
 
             .topbar {
-                padding: 0 20px;
+                padding: 15px 20px;
             }
 
             .content {
-                padding: 25px 20px;
+                padding: 24px 16px;
             }
 
-        }
-
-
-        @media (max-width: 600px) {
-
-            .booking-info {
+            .summary {
                 grid-template-columns: 1fr;
             }
 
-            .booking-header {
-                align-items: flex-start;
-                gap: 10px;
-                flex-direction: column;
+            .filters {
+                padding: 15px;
             }
 
+            .panel-heading {
+                padding: 18px 15px;
+            }
+        }
+
+        @media (max-width: 450px) {
             .customer-info {
                 display: none;
             }
 
+            .page-heading h1 {
+                font-size: 23px;
+            }
+
+            .filters input,
+            .filters select {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .detail-value {
+                text-align: left;
+            }
         }
-
     </style>
-
 </head>
-
 
 <body>
 
-
-    <!-- =========================
-         SIDEBAR
-    ========================= -->
-
-    <aside class="sidebar">
-
-
-        <div class="brand">
-
-            <h1>
-                Park<span>Grid</span>
-            </h1>
-
-            <p>
-                Smart Parking Management
-            </p>
-
-        </div>
-
-
-        <div class="menu">
-
-            <div class="menu-title">
-                Main Menu
-            </div>
-
-
-            <a href="{% url 'user_dashboard' %}">
-                <span class="menu-icon">⌂</span>
-                Dashboard
-            </a>
-
-
-            <a href="{% url 'parking_list' %}">
-                <span class="menu-icon">⌖</span>
-                Find Parking
-            </a>
-
-
-            <!-- ACTIVE PAGE -->
-
-            <a href="{% url 'booking_history' %}" class="active">
-                <span class="menu-icon">◷</span>
-                Booking History
-            </a>
-
-
-            <div class="menu-title" style="margin-top:25px;">
-                Support
-            </div>
-
-
-            <a href="{% url 'complaint' %}">
-                <span class="menu-icon">✉</span>
-                Complaints
-            </a>
-
-
-            <a href="{% url 'complaint_status' %}">
-                <span class="menu-icon">✓</span>
-                Complaint Status
-            </a>
-
-        </div>
-
-
-        <div class="sidebar-bottom">
-
-            <div class="logout">
-
-                <a href="{% url 'logout' %}">
-                    <span class="menu-icon">↪</span>
-                    Logout
-                </a>
-
-            </div>
-
-        </div>
-
-    </aside>
-
-
-    <!-- =========================
-         MAIN
-    ========================= -->
-
-    <div class="main">
-
-
-        <!-- TOPBAR -->
-
-        <header class="topbar">
-
-            <div class="page-title">
-
-                <h2>
-                    Booking History
-                </h2>
-
-                <p>
-                    View your previous parking reservations
-                </p>
-
-            </div>
-
-
-            <div class="customer">
-
-                <div class="customer-info">
-
-                    <strong>
-                        Customer
-                    </strong>
-
-                    <span>
-                        ParkGrid User
-                    </span>
-
-                </div>
-
-
-                <div class="avatar">
-                    👤
-                </div>
-
-            </div>
-
-        </header>
-
-
-        <!-- CONTENT -->
-
-        <main class="content">
-
-
-            <div class="page-heading">
-
-                <h1>
-                    🕘 Booking History
-                </h1>
-
-                <p>
-                    View your previous parking reservations and their status.
-                </p>
-
-            </div>
-
-
-            <!-- =========================
-                 DYNAMIC BOOKINGS
-            ========================= -->
-
-            {% if bookings %}
-
-                {% for booking in bookings %}
-
-                    <div class="history-card">
-
-
-                        <!-- HEADER -->
-
-                        <div class="booking-header">
-
-                            <h3>
-                                Booking #{{ booking.id }}
-                            </h3>
-
-
-                            <span class="status {{ booking.status }}">
-                                {{ booking.get_status_display }}
-                            </span>
-
-                        </div>
-
-
-                        <!-- INFORMATION -->
-
-                        <div class="booking-info">
-
-
-                            <div class="info-item">
-
-                                <span>
-                                    Parking Location
-                                </span>
-
-                                <strong>
-                                    📍 {{ booking.location.name }}
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>
-                                    Parking Slot
-                                </span>
-
-                                <strong>
-                                    🅿️ {{ booking.slot.slot_number }}
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>
-                                    Vehicle Number
-                                </span>
-
-                                <strong>
-                                    🚗 {{ booking.vehicle_number }}
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>
-                                    Booking Date
-                                </span>
-
-                                <strong>
-                                    📅 {{ booking.booking_date|date:"d F Y" }}
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- QR BUTTON -->
-
-                        <div class="booking-actions">
-
-                            <a
-                                href="{% url 'qr_code' booking.id %}"
-                                class="action-button"
-                            >
-                                📱 View QR Code →
-                            </a>
-
-                        </div>
-
-
-                    </div>
-
-                {% endfor %}
-
-
-            {% else %}
-
-
-                <!-- EMPTY STATE -->
-
-                <div class="empty-card">
-
-                    <div class="empty-icon">
-                        🅿️
-                    </div>
-
-
-                    <h3>
-                        No Bookings Yet
-                    </h3>
-
-
-                    <p>
-                        You haven't made any parking reservations yet.
-                    </p>
-
-
-                    <a
-                        href="{% url 'parking_list' %}"
-                        class="find-button"
-                    >
-                        🅿️ Find Parking
-                    </a>
-
-                </div>
-
-
-            {% endif %}
-
-        </main>
-
-
-        <!-- FOOTER -->
-
-        <footer class="footer">
-
-            © 2026 ParkGrid · Customer Parking Portal
-
-        </footer>
-
-
+<aside class="sidebar">
+    <div class="brand">
+        <h1>Park<span>Grid</span></h1>
+        <p>Smart Parking Management</p>
     </div>
 
-</body>
+    <div class="menu">
+        <div class="menu-title">Main Menu</div>
 
+        <a href="{% url 'user_dashboard' %}">
+            <span class="menu-icon">⌂</span>Dashboard
+        </a>
+
+        <a href="{% url 'parking_list' %}">
+            <span class="menu-icon">⌖</span>Find Parking
+        </a>
+
+        <a href="{% url 'my_bookings' %}">
+            <span class="menu-icon">▣</span>My Bookings
+        </a>
+
+        <a href="{% url 'booking_history' %}" class="active">
+            <span class="menu-icon">◷</span>Booking History
+        </a>
+
+        <div class="menu-title" style="margin-top:25px;">Support</div>
+
+        <a href="{% url 'complaint' %}">
+            <span class="menu-icon">✉</span>Complaints
+        </a>
+
+        <a href="{% url 'complaint_status' %}">
+            <span class="menu-icon">✓</span>Complaint Status
+        </a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="logout">
+            <a href="{% url 'logout' %}">
+                <span class="menu-icon">↪</span>Logout
+            </a>
+        </div>
+    </div>
+</aside>
+
+<div class="main">
+
+    <header class="topbar">
+        <div class="page-title">
+            <h2>Booking History</h2>
+            <p>Review your past parking reservations and payments</p>
+        </div>
+
+        <div class="customer">
+            <div class="customer-info">
+                <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <span>ParkGrid User</span>
+            </div>
+
+            <div class="avatar">
+                {{ request.user.username|first|upper }}
+            </div>
+        </div>
+    </header>
+
+    <main class="content">
+
+        <div class="page-heading">
+            <h1>🕘 Booking History</h1>
+            <p>Review completed and cancelled reservations and their payment details.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if bookings %}
+
+            <div class="summary">
+                <div class="summary-card">
+                    <span>Total History Records</span>
+                    <strong id="totalRecords">{{ bookings|length }}</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span>Completed Bookings</span>
+                    <strong id="completedRecords">0</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span>Cancelled Bookings</span>
+                    <strong id="cancelledRecords">0</strong>
+                </div>
+            </div>
+
+            <section class="history-panel">
+
+                <div class="panel-heading">
+                    <h3>Past Reservation Records</h3>
+                    <p>View booking details and payment summaries.</p>
+                </div>
+
+                <div class="filters">
+                    <input
+                        type="search"
+                        id="bookingSearch"
+                        placeholder="Search booking ID, location, slot or vehicle..."
+                        aria-label="Search bookings">
+
+                    <select id="statusFilter" aria-label="Filter by booking status">
+                        <option value="">All history</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="record-count" id="recordCount" aria-live="polite">
+                    Showing {{ bookings|length }} booking(s)
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Booking</th>
+                                <th>Parking Details</th>
+                                <th>Booking Date</th>
+                                <th>Status</th>
+                                <th>Payment Summary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="bookingTableBody">
+
+                            {% for booking in bookings %}
+
+                                <tr class="booking-row"
+                                    data-status="{{ booking.status|lower }}"
+                                    data-search="booking {{ booking.id }} {{ booking.location.name|default:'' }} {{ booking.slot.slot_number|default:'' }} {{ booking.vehicle_number|default:'' }}">
+
+                                    <td>
+                                        <span class="booking-id">
+                                            #{{ booking.id }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="location-name">
+                                            {{ booking.location.name|default:"Parking location" }}
+                                        </span>
+
+                                        <span class="subtext">
+                                            Slot: {{ booking.slot.slot_number|default:"Not assigned" }}
+                                        </span>
+
+                                        <span class="subtext">
+                                            Vehicle: {{ booking.vehicle_number|default:"Not provided" }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {{ booking.booking_date|date:"d M Y" }}
+                                    </td>
+
+                                    <td>
+                                        <span class="status {{ booking.status|lower }}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if booking.payment_obj %}
+
+                                            <span class="payment-main">
+                                                Final: ₹{{ booking.payment_obj.final_amount|default:"0.00" }}
+                                            </span>
+
+                                            <span class="payment-sub">
+                                                Advance: ₹{{ booking.payment_obj.advance_amount|default:"0.00" }}
+                                            </span>
+
+                                            <span class="payment-sub">
+                                                Balance:
+                                                {{ booking.payment_obj.get_balance_status_display|default:booking.payment_obj.balance_status|default:"Not available" }}
+                                            </span>
+
+                                            {% if booking.status == 'cancelled' %}
+                                                <span class="payment-sub refund-amount">
+                                                    Refund (25%): ₹{{ booking.payment_obj.refund_amount|default:"0.00" }}
+                                                </span>
+
+                                                <span class="payment-sub cancellation-charge">
+                                                    Cancellation Charge (75%): ₹{{ booking.payment_obj.cancellation_charge|default:"0.00" }}
+                                                </span>
+
+                                                <span class="payment-sub">
+                                                    Refund Status:
+                                                    {{ booking.payment_obj.get_refund_status_display|default:booking.payment_obj.refund_status }}
+                                                </span>
+                                            {% endif %}
+
+                                            {% if booking.actual_exit_time and booking.payment_obj.balance_status != 'paid' and booking.payment_obj.balance_amount > 0 %}
+                                                <span class="payment-sub" style="color:#b45309;font-weight:700;">
+                                                    Outstanding: ₹{{ booking.payment_obj.balance_amount }}
+                                                </span>
+                                            {% endif %}
+
+                                        {% else %}
+
+                                            <span class="payment-sub">
+                                                No payment record
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <div class="action-links">
+
+                                            <button
+                                                type="button"
+                                                class="action-button"
+                                                onclick="showBookingDetails(this)"
+                                                data-booking-id="{{ booking.id }}"
+                                                data-location="{{ booking.location.name|default:'Parking location' }}"
+                                                data-slot="{{ booking.slot.slot_number|default:'Not assigned' }}"
+                                                data-vehicle="{{ booking.vehicle_number|default:'Not provided' }}"
+                                                data-date="{{ booking.booking_date|date:'d M Y' }}"
+                                                data-status="{{ booking.get_status_display }}"
+                                                data-duration="{{ booking.actual_duration_display|default:'Not recorded' }}"
+                                                data-final="{% if booking.payment_obj %}{{ booking.payment_obj.final_amount|default:'0.00' }}{% else %}Not available{% endif %}"
+                                                data-advance="{% if booking.payment_obj %}{{ booking.payment_obj.advance_amount|default:'0.00' }}{% else %}Not available{% endif %}"
+                                                data-balance="{% if booking.payment_obj %}{{ booking.payment_obj.balance_amount|default:'0.00' }}{% else %}Not available{% endif %}"
+                                                data-balance-status="{% if booking.payment_obj %}{{ booking.payment_obj.get_balance_status_display|default:booking.payment_obj.balance_status|default:'Not available' }}{% else %}No payment record{% endif %}"
+                                                data-refund="{% if booking.payment_obj %}{{ booking.payment_obj.refund_amount|default:'0.00' }}{% else %}0.00{% endif %}"
+                                                data-cancellation-charge="{% if booking.payment_obj %}{{ booking.payment_obj.cancellation_charge|default:'0.00' }}{% else %}0.00{% endif %}"
+                                                data-refund-status="{% if booking.payment_obj %}{{ booking.payment_obj.get_refund_status_display|default:booking.payment_obj.refund_status }}{% else %}Not applicable{% endif %}">
+                                                View Details
+                                            </button>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="no-results" id="noResults">
+                    No bookings match your search or selected status.
+                </div>
+
+            </section>
+
+        {% else %}
+
+            <div class="empty-card">
+                <div class="empty-icon">🅿️</div>
+                <h3>No Booking History Yet</h3>
+                <p>Your completed and cancelled reservations will appear here.</p>
+
+                <a href="{% url 'parking_list' %}" class="find-button">
+                    🅿️ Find Parking
+                </a>
+            </div>
+
+        {% endif %}
+
+    </main>
+
+    <footer class="footer">
+        © 2026 ParkGrid · Customer Parking Portal
+    </footer>
+
+</div>
+
+<!-- Read-only booking details popup -->
+
+<div
+    id="bookingDetailsModal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="detailsTitle"
+    onclick="if (event.target === this) closeBookingDetails()">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <div>
+                <h2 id="detailsTitle">Booking Details</h2>
+                <p>Read-only reservation summary</p>
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                aria-label="Close booking details"
+                onclick="closeBookingDetails()">
+                &times;
+            </button>
+        </div>
+
+        <div class="modal-body" id="bookingDetailsContent">
+        </div>
+
+        <div class="modal-footer">
+            <button
+                type="button"
+                class="action-button"
+                onclick="closeBookingDetails()">
+                Close
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function addDetailRow(container, label, value) {
+        const row = document.createElement("div");
+        row.className = "detail-row";
+
+        const labelElement = document.createElement("span");
+        labelElement.className = "detail-label";
+        labelElement.textContent = label;
+
+        const valueElement = document.createElement("span");
+        valueElement.className = "detail-value";
+        valueElement.textContent = value || "Not recorded";
+
+        row.appendChild(labelElement);
+        row.appendChild(valueElement);
+        container.appendChild(row);
+    }
+
+    function addDetailHeading(container, title) {
+        const heading = document.createElement("h3");
+        heading.className = "detail-section-title";
+        heading.textContent = title;
+        container.appendChild(heading);
+    }
+
+    function showBookingDetails(button) {
+        const content = document.getElementById("bookingDetailsContent");
+        content.replaceChildren();
+
+        addDetailHeading(content, "Reservation Information");
+
+        addDetailRow(content, "Booking ID", "#" + button.dataset.bookingId);
+        addDetailRow(content, "Parking Location", button.dataset.location);
+        addDetailRow(content, "Parking Slot", button.dataset.slot);
+        addDetailRow(content, "Vehicle Number", button.dataset.vehicle);
+        addDetailRow(content, "Booking Date", button.dataset.date);
+        addDetailRow(content, "Booking Status", button.dataset.status);
+
+        if (button.dataset.status.toLowerCase() === "completed") {
+            addDetailRow(
+                content,
+                "Actual Parking Duration",
+                button.dataset.duration
+            );
+        }
+
+        addDetailHeading(content, "Payment Information");
+
+        const finalAmount = button.dataset.final;
+        const advanceAmount = button.dataset.advance;
+        const balanceAmount = button.dataset.balance;
+
+        addDetailRow(
+            content,
+            "Final Amount",
+            finalAmount === "Not available"
+                ? finalAmount
+                : "₹" + finalAmount
+        );
+
+        addDetailRow(
+            content,
+            "Advance Amount",
+            advanceAmount === "Not available"
+                ? advanceAmount
+                : "₹" + advanceAmount
+        );
+
+        addDetailRow(
+            content,
+            "Balance Amount",
+            balanceAmount === "Not available"
+                ? balanceAmount
+                : "₹" + balanceAmount
+        );
+
+        addDetailRow(
+            content,
+            "Balance Payment Status",
+            button.dataset.balanceStatus
+        );
+
+        if (button.dataset.status.toLowerCase() === "cancelled") {
+            addDetailHeading(content, "Cancellation and Refund");
+
+            addDetailRow(
+                content,
+                "Refund Amount (25%)",
+                "₹" + button.dataset.refund
+            );
+
+            addDetailRow(
+                content,
+                "Cancellation Charge (75%)",
+                "₹" + button.dataset.cancellationCharge
+            );
+
+            addDetailRow(
+                content,
+                "Refund Status",
+                button.dataset.refundStatus
+            );
+        }
+
+        document.getElementById("bookingDetailsModal").style.display = "block";
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeBookingDetails() {
+        document.getElementById("bookingDetailsModal").style.display = "none";
+        document.body.style.overflow = "";
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeBookingDetails();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("bookingSearch");
+        const statusFilter = document.getElementById("statusFilter");
+        const rows = Array.from(document.querySelectorAll(".booking-row"));
+
+        const recordCount = document.getElementById("recordCount");
+        const noResults = document.getElementById("noResults");
+
+        const totalRecords = document.getElementById("totalRecords");
+        const completedRecords = document.getElementById("completedRecords");
+        const cancelledRecords = document.getElementById("cancelledRecords");
+
+        if (!rows.length) {
+            return;
+        }
+
+        totalRecords.textContent = rows.length;
+
+        completedRecords.textContent = rows.filter(
+            row => row.dataset.status === "completed"
+        ).length;
+
+        cancelledRecords.textContent = rows.filter(
+            row => row.dataset.status === "cancelled"
+        ).length;
+
+        function filterBookings() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value.toLowerCase();
+
+            let visibleCount = 0;
+
+            rows.forEach(function (row) {
+                const searchText = row.dataset.search.toLowerCase();
+                const status = row.dataset.status.toLowerCase();
+
+                const matchesSearch = searchText.includes(searchTerm);
+                const matchesStatus =
+                    !selectedStatus || status === selectedStatus;
+
+                const visible = matchesSearch && matchesStatus;
+
+                row.style.display = visible ? "" : "none";
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            recordCount.textContent =
+                "Showing " + visibleCount + " of " + rows.length + " booking(s)";
+
+            noResults.style.display =
+                visibleCount === 0 ? "block" : "none";
+        }
+
+        searchInput.addEventListener("input", filterBookings);
+        statusFilter.addEventListener("change", filterBookings);
+
+        filterBookings();
+    });
+</script>
+
+</body>
 </html>

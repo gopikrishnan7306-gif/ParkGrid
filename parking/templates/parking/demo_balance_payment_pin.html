@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Payment - ParkGrid</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #263445;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            width: 100%;
+            max-width: 440px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 27px;
+            font-weight: bold;
+            color: #1769aa;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 26px;
+        }
+
+        .payment-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: #e5f2ff;
+            color: #1769aa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #718096;
+            margin-bottom: 22px;
+        }
+
+        .amount-box {
+            background: #f0f7ff;
+            border: 1px solid #d7e9ff;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .amount-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1769aa;
+        }
+
+        .booking-info {
+            font-size: 14px;
+            color: #526174;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 9px;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ccd5e0;
+            border-radius: 9px;
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 10px;
+            outline: none;
+            margin-bottom: 18px;
+        }
+
+        .pin-input:focus {
+            border-color: #1769aa;
+            box-shadow: 0 0 0 3px rgba(23, 105, 170, 0.12);
+        }
+
+        .primary-button {
+            width: 100%;
+            border: none;
+            border-radius: 9px;
+            padding: 14px;
+            background: #1769aa;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .primary-button:hover {
+            background: #10558d;
+        }
+
+        .error-message {
+            background: #fff0f0;
+            border: 1px solid #ffd0d0;
+            color: #b42318;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #1769aa;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .demo-note {
+            margin-top: 22px;
+            padding-top: 16px;
+            border-top: 1px solid #e5eaf0;
+            text-align: center;
+            color: #7b8794;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="payment-container">
+
+        <div class="logo">ParkGrid</div>
+        <div class="subtitle">Smart Parking Management</div>
+
+        <div class="payment-icon">₹</div>
+
+        <h1>Balance Payment Verification</h1>
+
+        <p class="description">
+            Confirm your remaining parking payment using the
+            four-digit demo PIN.
+        </p>
+
+        <div class="amount-box">
+            <div class="amount-label">Balance Amount Due</div>
+            <div class="amount">
+                ₹{{ balance_amount|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="booking-info">
+            Booking ID: #{{ booking.id }}
+        </div>
+
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="payment_method"
+                value="{{ payment_method }}"
+            >
+
+            <input
+                type="hidden"
+                name="stage"
+                value="confirm_payment"
+            >
+
+            <label for="demo_pin">Enter 4-digit demo PIN</label>
+
+            <input
+                class="pin-input"
+                type="password"
+                id="demo_pin"
+                name="demo_pin"
+                placeholder="••••"
+                maxlength="4"
+                inputmode="numeric"
+                pattern="[0-9]{4}"
+                autocomplete="off"
+                aria-label="Four-digit verification PIN"
+                required
+            >
+
+            <button class="primary-button" type="submit">
+                Confirm Balance Payment →
+            </button>
+        </form>
+
+        <a
+            class="back-link"
+            href="{% url 'booking_history' %}"
+        >
+            Back to Booking History
+        </a>
+
+        <div class="demo-note">
+            <strong>Demo Payment Only</strong><br>
+            This is a project demonstration. No real money is
+            transferred, and the PIN is only checked for its format.
+        </div>
+
+    </div>
+</body>
+</html>

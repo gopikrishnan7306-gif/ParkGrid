@@ -6,7 +6,10 @@ from decimal import Decimal
 
 import qrcode
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q
@@ -28,52 +31,34 @@ from .models import (
 # PARKGRID TARIFF HELPER
 # =========================================================
 
-def calculate_parking_charge(vehicle_type, duration_seconds):
+
+def calculate_parking_charge(location, vehicle_type, duration_seconds):
     """
-    ParkGrid parking tariff:
-
-    Two Wheeler:
-        First 2 hours       = ₹30
-        Each extra hour     = ₹10
-
-    Four Wheeler:
-        First 2 hours       = ₹60
-        Each extra hour     = ₹20
-
-    Any started additional hour is charged as a full hour.
+    The base rate covers the first hour.
+    Extra parking time is charged proportionally by the second.
     """
+
+    from decimal import Decimal
 
     if vehicle_type == 'two_wheeler':
-        base_rate = Decimal('30.00')
-        extra_hour_rate = Decimal('10.00')
+        base_rate = Decimal(str(location.two_wheeler_base_rate))
+        extra_hour_rate = Decimal(str(location.two_wheeler_extra_hour_rate))
     else:
-        base_rate = Decimal('60.00')
-        extra_hour_rate = Decimal('20.00')
+        base_rate = Decimal(str(location.four_wheeler_base_rate))
+        extra_hour_rate = Decimal(str(location.four_wheeler_extra_hour_rate))
 
-    if duration_seconds <= 2 * 60 * 60:
+    duration_seconds = max(0, duration_seconds)
+
+    if duration_seconds == 0:
+        final_amount = Decimal('0.00')
+    elif duration_seconds <= 3600:
         final_amount = base_rate
     else:
-        extra_seconds = (
-            duration_seconds -
-            (2 * 60 * 60)
-        )
+        extra_seconds = Decimal(str(duration_seconds - 3600))
+        extra_charge = extra_hour_rate * extra_seconds / Decimal('3600')
+        final_amount = (base_rate + extra_charge).quantize(Decimal('0.01'))
 
-        extra_hours = (
-            int(extra_seconds) + 3599
-        ) // 3600
-
-        final_amount = (
-            base_rate +
-            Decimal(extra_hours) *
-            extra_hour_rate
-        )
-
-    return (
-        final_amount,
-        base_rate,
-        extra_hour_rate
-    )
-
+    return final_amount, base_rate, extra_hour_rate
 
 # =========================================================
 # DURATION DISPLAY HELPER
@@ -114,6 +99,118 @@ def home(request):
         'parking/home.html'
     )
 
+
+
+
+def calculate_exit_balance(booking, payment):
+    """
+    Calculate the final parking charge and pending balance.
+    The base rate covers the first hour.
+    Extra time beyond reservation expiry is charged proportionally.
+    """
+
+    if not booking.actual_entry_time:
+        raise ValueError("Entry time is not recorded.")
+
+    # Do not recalculate if exit has already been recorded.
+    if booking.actual_exit_time:
+        return format_duration(
+            (
+                booking.actual_exit_time -
+                booking.actual_entry_time
+            ).total_seconds()
+        )
+
+    actual_exit_time = timezone.now()
+
+    actual_duration_seconds = max(
+        0,
+        (
+            actual_exit_time -
+            booking.actual_entry_time
+        ).total_seconds()
+    )
+
+    actual_duration_display = format_duration(
+        actual_duration_seconds
+    )
+
+    # Calculate the booked duration and its fee.
+    booked_duration_seconds = max(
+        0,
+        (
+            booking.reservation_expiry -
+            booking.expected_arrival
+        ).total_seconds()
+    )
+
+    booked_amount, base_rate, extra_hour_rate = (
+        calculate_parking_charge(
+            booking.location,
+            booking.vehicle_type,
+            booked_duration_seconds
+        )
+    )
+
+    # Charge proportionally for time beyond reservation expiry.
+    extra_seconds = max(
+        0,
+        (
+            actual_exit_time -
+            booking.reservation_expiry
+        ).total_seconds()
+    )
+
+    extra_charge = (
+        Decimal(str(extra_seconds)) *
+        Decimal(str(extra_hour_rate)) /
+        Decimal('3600')
+    ).quantize(Decimal('0.01'))
+
+    final_amount = (
+        booked_amount + extra_charge
+    ).quantize(Decimal('0.01'))
+
+    advance_amount = payment.advance_amount or Decimal('0.00')
+
+    balance_amount = max(
+        Decimal('0.00'),
+        final_amount - advance_amount
+    ).quantize(Decimal('0.01'))
+
+    # Save the final charge and pending balance.
+    booking.actual_exit_time = actual_exit_time
+
+    payment.final_amount = final_amount
+    payment.balance_amount = balance_amount
+    payment.balance_status = (
+        'paid'
+        if balance_amount == Decimal('0.00')
+        else 'pending'
+    )
+
+    payment.save(update_fields=[
+        'final_amount',
+        'balance_amount',
+        'balance_status',
+    ])
+
+    # Release the slot only if no balance remains.
+    if balance_amount == Decimal('0.00'):
+        booking.status = 'completed'
+        booking.slot.status = 'available'
+    else:
+        booking.status = 'active'
+        booking.slot.status = 'occupied'
+
+    booking.slot.save(update_fields=['status'])
+
+    booking.save(update_fields=[
+        'actual_exit_time',
+        'status',
+    ])
+
+    return actual_duration_display
 
 # =========================================================
 # REGISTRATION
@@ -326,10 +423,31 @@ def user_logout(request):
 # =========================================================
 
 def user_dashboard(request):
+    user = request.user
+
+    total_bookings = Booking.objects.filter(
+        user=user
+    ).count()
+
+    active_bookings = Booking.objects.filter(
+        user=user,
+        status__in=['reserved', 'active']
+    ).count()
+
+    total_complaints = Complaint.objects.filter(
+        user=user
+    ).count()
+
+    context = {
+        'total_bookings': total_bookings,
+        'active_bookings': active_bookings,
+        'total_complaints': total_complaints,
+    }
 
     return render(
         request,
-        'parking/dashboard.html'
+        'parking/dashboard.html',
+        context
     )
 
 
@@ -1015,470 +1133,280 @@ def manager_mark_entry(request, booking_id):
 # MANAGER MARK EXIT
 # =========================================================
 
-def manager_mark_exit(request, booking_id):
 
+def manager_mark_exit(request, booking_id):
     location = ParkingLocation.objects.filter(
         manager=request.user
     ).first()
 
     if not location:
-
-        messages.error(
-            request,
-            'Parking facility not found.'
-        )
-
-        return redirect(
-            'manager_dashboard'
-        )
+        messages.error(request, 'Parking facility not found.')
+        return redirect('manager_dashboard')
 
     try:
-
         booking = Booking.objects.select_related(
-            'user',
-            'slot',
-            'location'
+            'user', 'slot', 'location'
         ).get(
             id=booking_id,
             location=location
         )
-
     except Booking.DoesNotExist:
-
-        messages.error(
-            request,
-            'Booking not found.'
-        )
-
-        return redirect(
-            'manager_bookings'
-        )
+        messages.error(request, 'Booking not found.')
+        return redirect('manager_bookings')
 
     if booking.status != 'active':
-
         messages.error(
             request,
             'This booking cannot be marked as exit.'
         )
-
-        return redirect(
-            'manager_bookings'
-        )
+        return redirect('manager_bookings')
 
     if not booking.actual_entry_time:
-
         messages.error(
             request,
             'Entry time is not recorded.'
         )
+        return redirect('manager_bookings')
 
-        return redirect(
-            'manager_bookings'
-        )
-
-    payment = getattr(
-        booking,
-        'payment',
-        None
-    )
+    payment = getattr(booking, 'payment', None)
 
     if not payment or payment.advance_status != 'paid':
-
         messages.error(
             request,
             'Advance payment has not been completed.'
         )
+        return redirect('manager_bookings')
 
-        return redirect(
-            'manager_bookings'
+    try:
+        if not booking.actual_exit_time:
+            actual_duration_display = calculate_exit_balance(
+                booking, payment
+            )
+        else:
+            actual_duration_display = format_duration(
+                (
+                    booking.actual_exit_time
+                    - booking.actual_entry_time
+                ).total_seconds()
+            )
+    except ValueError as error:
+        messages.error(request, str(error))
+        return redirect('manager_bookings')
+
+    # Refresh the latest saved booking and payment details.
+    payment.refresh_from_db()
+    booking.refresh_from_db()
+
+    # Calculate the booked parking charge.
+    booked_duration_seconds = max(
+        0,
+        (
+            booking.reservation_expiry
+            - booking.expected_arrival
+        ).total_seconds()
+    )
+
+    booked_amount, base_rate, extra_hour_rate = (
+        calculate_parking_charge(
+            booking.location,
+            booking.vehicle_type,
+            booked_duration_seconds
         )
-
-    actual_exit_time = timezone.now()
-
-    booking.actual_exit_time = (
-        actual_exit_time
     )
 
-    duration_seconds = (
-        actual_exit_time -
-        booking.actual_entry_time
-    ).total_seconds()
-
-    if duration_seconds < 0:
-
-        duration_seconds = 0
-
-    actual_duration_display = (
-        format_duration(
-            duration_seconds
-        )
+    # Calculate extra time beyond the reservation expiry.
+    extra_seconds = max(
+        0,
+        (
+            booking.actual_exit_time
+            - booking.reservation_expiry
+        ).total_seconds()
     )
 
-    (
-        final_amount,
-        base_rate,
-        extra_hour_rate
-    ) = calculate_parking_charge(
-        booking.vehicle_type,
-        duration_seconds
-    )
+    extra_time_display = format_duration(extra_seconds)
+
+    extra_charge = (
+        Decimal(str(extra_seconds))
+        * Decimal(str(extra_hour_rate))
+        / Decimal('3600')
+    ).quantize(Decimal('0.01'))
 
     advance_amount = (
-        payment.advance_amount
+        payment.advance_amount or Decimal('0.00')
     )
 
-    balance_amount = (
-        final_amount -
-        advance_amount
+    final_amount = payment.final_amount or Decimal('0.00')
+    balance_amount = payment.balance_amount or Decimal('0.00')
+
+    # Show the complete payment breakdown to the manager.
+    breakdown = (
+        f'Actual duration: {actual_duration_display} | '
+        f'Booked charge: ₹{booked_amount} | '
+        f'Extra time: {extra_time_display} | '
+        f'Extra-time charge: ₹{extra_charge} | '
+        f'Final amount: ₹{final_amount} | '
+        f'Advance paid: ₹{advance_amount} | '
+        f'Balance due: ₹{balance_amount}'
     )
 
-    if balance_amount < 0:
-
-        balance_amount = Decimal(
-            '0.00'
+    if balance_amount > Decimal('0.00'):
+        messages.warning(
+            request,
+            f'Exit recorded. {breakdown}'
+        )
+    else:
+        messages.success(
+            request,
+            f'Parking completed. {breakdown}'
         )
 
-    payment.final_amount = (
-        final_amount
-    )
-
-    payment.balance_amount = (
-        balance_amount
-    )
-
-    if balance_amount == Decimal('0.00'):
-
-        payment.balance_status = 'paid'
-
-    else:
-
-        payment.balance_status = 'pending'
-
-    payment.save(
-        update_fields=[
-            'final_amount',
-            'balance_amount',
-            'balance_status'
-        ]
-    )
-
-    booking.status = 'completed'
-
-    booking.save(
-        update_fields=[
-            'actual_exit_time',
-            'status'
-        ]
-    )
-
-    booking.slot.status = 'available'
-
-    booking.slot.save(
-        update_fields=[
-            'status'
-        ]
-    )
-
-    messages.success(
-        request,
-        f'Exit recorded successfully for Booking #{booking.id}. '
-        f'Actual duration: {actual_duration_display}. '
-        f'Final amount: ₹{final_amount}. '
-        f'Advance paid: ₹{advance_amount}. '
-        f'Balance: ₹{balance_amount}.'
-    )
-
-    return redirect(
-        'manager_bookings'
-    )
+    return redirect('manager_bookings')
 
 
 # =========================================================
 # SCAN QR
 # =========================================================
 
+
 def scan_qr(request, booking_id):
+    if not request.user.is_authenticated:
+        messages.error(request, 'Please log in to scan your booking QR code.')
+        return redirect('login')
 
     try:
-
         booking = Booking.objects.select_related(
-            'user',
-            'slot',
-            'location'
-        ).get(
-            id=booking_id
-        )
-
+            'user', 'slot', 'location'
+        ).get(id=booking_id)
     except Booking.DoesNotExist:
+        messages.error(request, 'Booking not found.')
+        return redirect('booking_history')
 
-        messages.error(
-            request,
-            'Booking not found.'
-        )
+    # Only the booking owner or the assigned parking manager can view the QR.
+    is_customer = booking.user_id == request.user.id
+    is_manager = ParkingLocation.objects.filter(
+        manager=request.user,
+        id=booking.location_id
+    ).exists()
 
-        return redirect(
-            'manager_bookings'
-        )
-
-    # -----------------------------------------------------
-    # MANAGER AUTHORIZATION
-    # -----------------------------------------------------
-
-    location = ParkingLocation.objects.filter(
-        manager=request.user
-    ).first()
-
-    if (
-        not location or
-        booking.location_id != location.id
-    ):
-
+    if not is_customer and not is_manager:
         messages.error(
             request,
             'You are not authorized to view this booking.'
         )
+        return redirect('user_dashboard')
 
-        return redirect(
-            'manager_dashboard'
+    # Customers can view their booking QR, but cannot record vehicle exit.
+    if is_customer and not is_manager and booking.status == 'active':
+        messages.error(
+            request,
+            'Please ask the parking manager to confirm your vehicle exit.'
         )
+        return redirect('booking_history')
 
-    # -----------------------------------------------------
-    # PAYMENT
-    # -----------------------------------------------------
+    payment = getattr(booking, 'payment', None)
 
-    payment = getattr(
-        booking,
-        'payment',
-        None
+    booked_duration_seconds = max(
+        0,
+        (
+            booking.reservation_expiry
+            - booking.expected_arrival
+        ).total_seconds()
     )
-
-    # -----------------------------------------------------
-    # BOOKED DURATION
-    # -----------------------------------------------------
-
-    booked_duration_seconds = (
-        booking.reservation_expiry -
-        booking.expected_arrival
-    ).total_seconds()
-
-    booked_duration_display = (
-        format_duration(
-            booked_duration_seconds
-        )
+    booked_duration_display = format_duration(
+        booked_duration_seconds
     )
 
     actual_duration_display = None
     action = None
 
-    # =====================================================
-    # FIRST QR SCAN → ENTRY
-    # =====================================================
-
+    # Record entry only once, after advance payment.
     if booking.status == 'reserved':
-
-        if (
-            not payment or
-            payment.advance_status != 'paid'
-        ):
-
+        if not payment or payment.advance_status != 'paid':
             action = 'payment_required'
-
             messages.error(
                 request,
-                'Advance payment has not been completed.'
+                'Please complete the advance payment before entry.'
             )
-
         else:
-
-            # Record actual entry time
             booking.actual_entry_time = timezone.now()
-
-            # Change booking to active
             booking.status = 'active'
-
-            # Occupy parking slot
             booking.slot.status = 'occupied'
 
-            booking.save(
-                update_fields=[
-                    'actual_entry_time',
-                    'status'
-                ]
-            )
-
-            booking.slot.save(
-                update_fields=[
-                    'status'
-                ]
-            )
+            booking.save(update_fields=[
+                'actual_entry_time',
+                'status'
+            ])
+            booking.slot.save(update_fields=['status'])
 
             action = 'entry'
-
             messages.success(
                 request,
-                f'Entry recorded successfully for Booking #{booking.id}.'
+                f'Entry recorded for Booking #{booking.id}.'
             )
 
-    # =====================================================
-    # SECOND QR SCAN → EXIT
-    # =====================================================
-
+    # Record exit once, then show any balance due.
     elif booking.status == 'active':
-
         if not booking.actual_entry_time:
-
             action = 'error'
+            messages.error(request, 'Entry time has not been recorded.')
 
-            messages.error(
-                request,
-                'Entry time is not recorded.'
-            )
-
-        elif (
-            not payment or
-            payment.advance_status != 'paid'
-        ):
-
+        elif not payment or payment.advance_status != 'paid':
             action = 'payment_required'
+            messages.error(request, 'Advance payment is not completed.')
 
-            messages.error(
-                request,
-                'Advance payment has not been completed.'
+        elif booking.actual_exit_time:
+            actual_duration_display = format_duration(
+                (
+                    booking.actual_exit_time
+                    - booking.actual_entry_time
+                ).total_seconds()
             )
+
+            if payment.balance_status == 'paid':
+                booking.status = 'completed'
+                booking.slot.status = 'available'
+                booking.save(update_fields=['status'])
+                booking.slot.save(update_fields=['status'])
+                action = 'completed'
+            else:
+                action = 'balance_pending'
 
         else:
-
-            # Record actual exit time
-            actual_exit_time = timezone.now()
-
-            booking.actual_exit_time = (
-                actual_exit_time
-            )
-
-            # Calculate actual parking duration
-            duration_seconds = (
-                actual_exit_time -
-                booking.actual_entry_time
-            ).total_seconds()
-
-            if duration_seconds < 0:
-
-                duration_seconds = 0
-
-            actual_duration_display = (
-                format_duration(
-                    duration_seconds
+            try:
+                actual_duration_display = calculate_exit_balance(
+                    booking, payment
                 )
-            )
-
-            # Calculate final charge
-            (
-                final_amount,
-                base_rate,
-                extra_hour_rate
-            ) = calculate_parking_charge(
-                booking.vehicle_type,
-                duration_seconds
-            )
-
-            # Advance already paid
-            advance_amount = (
-                payment.advance_amount
-            )
-
-            # Remaining balance
-            balance_amount = (
-                final_amount -
-                advance_amount
-            )
-
-            if balance_amount < 0:
-
-                balance_amount = Decimal(
-                    '0.00'
-                )
-
-            # Save final payment calculation
-            payment.final_amount = (
-                final_amount
-            )
-
-            payment.balance_amount = (
-                balance_amount
-            )
-
-            if balance_amount == Decimal('0.00'):
-
-                payment.balance_status = 'paid'
-
+            except ValueError as error:
+                action = 'error'
+                messages.error(request, str(error))
             else:
+                booking.refresh_from_db()
+                payment.refresh_from_db()
 
-                payment.balance_status = 'pending'
-
-            payment.save(
-                update_fields=[
-                    'final_amount',
-                    'balance_amount',
-                    'balance_status'
-                ]
-            )
-
-            # Complete booking
-            booking.status = 'completed'
-
-            booking.save(
-                update_fields=[
-                    'actual_exit_time',
-                    'status'
-                ]
-            )
-
-            # Release parking slot
-            booking.slot.status = 'available'
-
-            booking.slot.save(
-                update_fields=[
-                    'status'
-                ]
-            )
-
-            action = 'exit'
-
-            messages.success(
-                request,
-                f'Exit recorded successfully for Booking #{booking.id}.'
-            )
-
-    # =====================================================
-    # ALREADY COMPLETED
-    # =====================================================
+                if payment.balance_status == 'paid':
+                    action = 'completed'
+                    messages.success(
+                        request,
+                        f'Exit recorded. Final amount: ₹{payment.final_amount}.'
+                    )
+                else:
+                    action = 'balance_pending'
+                    messages.warning(
+                        request,
+                        f'Exit recorded. Balance due: ₹{payment.balance_amount}.'
+                    )
 
     elif booking.status == 'completed':
-
-        if (
-            booking.actual_entry_time and
-            booking.actual_exit_time
-        ):
-
-            actual_duration_seconds = (
-                booking.actual_exit_time -
-                booking.actual_entry_time
-            ).total_seconds()
-
-            actual_duration_display = (
-                format_duration(
-                    actual_duration_seconds
-                )
+        if booking.actual_entry_time and booking.actual_exit_time:
+            actual_duration_display = format_duration(
+                (
+                    booking.actual_exit_time
+                    - booking.actual_entry_time
+                ).total_seconds()
             )
-
         action = 'completed'
 
-    # =====================================================
-    # OTHER STATUS
-    # =====================================================
-
     else:
-
         action = 'invalid'
 
     return render(
@@ -1487,13 +1415,13 @@ def scan_qr(request, booking_id):
         {
             'booking': booking,
             'payment': payment,
-            'booked_duration_display':
-                booked_duration_display,
-            'actual_duration_display':
-                actual_duration_display,
+            'booked_duration_display': booked_duration_display,
+            'actual_duration_display': actual_duration_display,
             'action': action,
+            'is_customer': is_customer,
         }
     )
+
 
 
 # =========================================================
@@ -2215,9 +2143,7 @@ def booking(request):
 # =========================================================
 
 def booking_confirmation(request, booking_id):
-
     try:
-
         booking = Booking.objects.select_related(
             'location',
             'slot'
@@ -2227,25 +2153,40 @@ def booking_confirmation(request, booking_id):
         )
 
     except Booking.DoesNotExist:
-
         messages.error(
             request,
             'Booking not found.'
         )
+        return redirect('booking_history')
 
-        return redirect(
-            'booking_history'
-        )
+    booked_duration_seconds = max(
+        0,
+        (
+            booking.reservation_expiry -
+            booking.expected_arrival
+        ).total_seconds()
+    )
 
-    booked_duration_seconds = (
-        booking.reservation_expiry -
-        booking.expected_arrival
-    ).total_seconds()
+    booked_duration_display = format_duration(
+        booked_duration_seconds
+    )
 
-    booked_duration_display = (
-        format_duration(
+    full_amount, base_rate, extra_hour_rate = (
+        calculate_parking_charge(
+            booking.location,
+            booking.vehicle_type,
             booked_duration_seconds
         )
+    )
+
+    advance_amount = min(
+        Decimal('20.00'),
+        full_amount
+    )
+
+    remaining_amount = max(
+        Decimal('0.00'),
+        full_amount - advance_amount
     )
 
     return render(
@@ -2253,143 +2194,264 @@ def booking_confirmation(request, booking_id):
         'parking/booking_confirmation.html',
         {
             'booking': booking,
-            'booked_duration_display':
-                booked_duration_display,
+            'booked_duration_display': booked_duration_display,
+            'full_amount': full_amount,
+            'advance_amount': advance_amount,
+            'remaining_amount': remaining_amount,
+            'base_rate': base_rate,
+            'extra_hour_rate': extra_hour_rate,
         }
     )
+
 
 
 # =========================================================
 # ADVANCE PAYMENT
 # =========================================================
 
+
+
+
 def advance_payment(request, booking_id):
-
     try:
-
         booking = Booking.objects.select_related(
-            'location',
-            'slot',
-            'user'
-        ).get(
-            id=booking_id,
-            user=request.user
-        )
-
+            'location', 'slot', 'user'
+        ).get(id=booking_id, user=request.user)
     except Booking.DoesNotExist:
+        messages.error(request, 'Booking not found.')
+        return redirect('booking_history')
 
-        messages.error(
-            request,
-            'Booking not found.'
-        )
-
-        return redirect(
-            'booking_history'
-        )
-
-    # -----------------------------------------------------
-    # BOOKED DURATION
-    # -----------------------------------------------------
-
-    duration_seconds = (
-        booking.reservation_expiry -
-        booking.expected_arrival
-    ).total_seconds()
-
-    duration_hours = int(
-        duration_seconds // 3600
+    duration_seconds = max(
+        0,
+        (booking.reservation_expiry - booking.expected_arrival).total_seconds()
     )
 
-    duration_minutes = int(
-        (duration_seconds % 3600) // 60
-    )
+    booked_duration_display = format_duration(duration_seconds)
 
-    booked_duration_display = (
-        format_duration(
-            duration_seconds
-        )
-    )
-
-    # -----------------------------------------------------
-    # PARKGRID TARIFF
-    # -----------------------------------------------------
-
-    (
-        advance_amount,
-        base_rate,
-        extra_hour_rate
-    ) = calculate_parking_charge(
+    full_amount, base_rate, extra_hour_rate = calculate_parking_charge(
+        booking.location,
         booking.vehicle_type,
         duration_seconds
     )
 
-    # -----------------------------------------------------
-    # PROCESS ADVANCE PAYMENT
-    # -----------------------------------------------------
+    advance_amount = min(Decimal('20.00'), full_amount)
 
     if request.method == 'POST':
+        payment_method = request.POST.get('payment_method', '').strip()
+        stage = request.POST.get('stage', '')
 
-        payment_method = request.POST.get(
-            'payment_method'
-        )
+        if payment_method not in ['gpay', 'phonepe', 'upi']:
+            messages.error(request, 'Please select a valid payment method.')
+            return redirect('advance_payment', booking_id=booking.id)
 
-        if payment_method not in [
-            'gpay',
-            'phonepe',
-            'upi'
-        ]:
+        if stage == 'confirm_payment':
+            demo_pin = request.POST.get('demo_pin', '').strip()
 
-            messages.error(
-                request,
-                'Please select a valid payment method.'
-            )
+            if not demo_pin.isdigit() or len(demo_pin) != 4:
+                return render(request, 'parking/demo_payment_pin.html', {
+                    'booking': booking,
+                    'advance_amount': advance_amount,
+                    'full_amount': full_amount,
+                    'payment_method': payment_method,
+                    'error': 'Please enter a valid 4-digit PIN.',
+                })
 
-            return redirect(
-                'advance_payment',
-                booking_id=booking.id
-            )
+            payment, created = Payment.objects.get_or_create(booking=booking)
 
-        payment, created = (
-            Payment.objects.get_or_create(
-                booking=booking
-            )
-        )
+            if payment.advance_status == 'paid':
+                messages.info(request, 'Advance payment is already completed.')
+                return redirect('booking_history')
 
-        payment.advance_amount = (
-            advance_amount
-        )
+            payment.advance_amount = advance_amount
+            payment.advance_payment_method = payment_method
+            payment.advance_status = 'paid'
+            payment.advance_payment_time = timezone.now()
+            payment.save()
 
-        payment.advance_payment_method = (
-            payment_method
-        )
+            return render(request, 'parking/payment_success.html', {
+                'booking': booking,
+                'advance_amount': advance_amount,
+                'full_amount': full_amount,
+                'payment_method': payment_method,
+                'transaction_reference': (
+                    f'PG-DEMO-{booking.id}-{int(timezone.now().timestamp())}'
+                ),
+            })
 
-        payment.advance_status = 'paid'
-
-        payment.advance_payment_time = (
-            timezone.now()
-        )
-
-        payment.save()
-
-        return redirect(
-            'qr_code',
-            booking_id=booking.id
-        )
-
-    return render(
-        request,
-        'parking/advance_payment.html',
-        {
+        return render(request, 'parking/demo_payment_pin.html', {
             'booking': booking,
             'advance_amount': advance_amount,
-            'duration_hours': duration_hours,
-            'duration_minutes': duration_minutes,
-            'booked_duration_display':
-                booked_duration_display,
-            'base_rate': base_rate,
-            'extra_hour_rate': extra_hour_rate,
-        }
+            'full_amount': full_amount,
+            'payment_method': payment_method,
+        })
+
+    return render(request, 'parking/advance_payment.html', {
+        'booking': booking,
+        'advance_amount': advance_amount,
+        'full_amount': full_amount,
+        'duration_hours': int(duration_seconds // 3600),
+        'duration_minutes': int((duration_seconds % 3600) // 60),
+        'booked_duration_display': booked_duration_display,
+        'base_rate': base_rate,
+        'extra_hour_rate': extra_hour_rate,
+    })
+
+
+# =========================================================
+# BALANCE PAYMENT
+# =========================================================
+
+
+
+
+from django.db import transaction
+
+
+def balance_payment(request, booking_id):
+    if request.method not in ['GET', 'POST']:
+        return redirect('booking_history')
+
+    try:
+        booking = Booking.objects.select_related(
+            'user', 'slot', 'location'
+        ).get(
+            id=booking_id,
+            user=request.user
+        )
+    except Booking.DoesNotExist:
+        messages.error(request, 'Booking not found.')
+        return redirect('booking_history')
+
+    payment = getattr(booking, 'payment', None)
+
+    if not payment or payment.advance_status != 'paid':
+        messages.error(request, 'Advance payment is not completed.')
+        return redirect('booking_history')
+
+    if booking.status != 'active' or not booking.actual_exit_time:
+        messages.error(
+            request,
+            'The parking exit must be recorded before balance payment.'
+        )
+        return redirect('booking_history')
+
+    if payment.balance_status == 'paid':
+        messages.info(request, 'Balance payment is already completed.')
+        return redirect('booking_history')
+
+    if (
+        payment.balance_amount is None
+        or payment.balance_amount <= Decimal('0.00')
+    ):
+        messages.error(request, 'There is no pending balance.')
+        return redirect('booking_history')
+
+    if request.method == 'GET':
+        return render(
+            request,
+            'parking/advance_payment.html',
+            {
+                'booking': booking,
+                'balance_amount': payment.balance_amount,
+                'is_balance_payment': True,
+            }
+        )
+
+    valid_methods = ['gpay', 'phonepe', 'upi']
+    payment_method = request.POST.get(
+        'payment_method', ''
+    ).strip().lower()
+    stage = request.POST.get('stage', '')
+
+    if payment_method not in valid_methods:
+        messages.error(request, 'Please select a valid payment method.')
+        return redirect('balance_payment', booking_id=booking.id)
+
+    if stage != 'confirm_payment':
+        return render(
+            request,
+            'parking/demo_balance_payment_pin.html',
+            {
+                'booking': booking,
+                'balance_amount': payment.balance_amount,
+                'payment_method': payment_method,
+            }
+        )
+
+    demo_pin = request.POST.get('demo_pin', '').strip()
+
+    if not demo_pin.isdigit() or len(demo_pin) != 4:
+        return render(
+            request,
+            'parking/demo_balance_payment_pin.html',
+            {
+                'booking': booking,
+                'balance_amount': payment.balance_amount,
+                'payment_method': payment_method,
+                'error': 'Please enter a valid 4-digit PIN.',
+            }
+        )
+
+    # Lock and recheck the records before recording payment.
+    with transaction.atomic():
+        locked_booking = Booking.objects.select_for_update().get(
+            id=booking.id,
+            user=request.user
+        )
+        locked_payment = Payment.objects.select_for_update().get(
+            booking=locked_booking
+        )
+        locked_slot = ParkingSlot.objects.select_for_update().get(
+            id=locked_booking.slot_id
+        )
+
+        if (
+            locked_booking.status != 'active'
+            or not locked_booking.actual_exit_time
+        ):
+            messages.error(
+                request,
+                'This booking is no longer awaiting balance payment.'
+            )
+            return redirect('booking_history')
+
+        if locked_payment.balance_status == 'paid':
+            messages.info(
+                request,
+                'Balance payment is already completed.'
+            )
+            return redirect('booking_history')
+
+        if (
+            locked_payment.balance_amount is None
+            or locked_payment.balance_amount <= Decimal('0.00')
+        ):
+            messages.error(request, 'There is no pending balance.')
+            return redirect('booking_history')
+
+        balance_paid = locked_payment.balance_amount
+
+        locked_payment.balance_payment_method = payment_method
+        locked_payment.balance_payment_time = timezone.now()
+        locked_payment.balance_status = 'paid'
+        locked_payment.save(update_fields=[
+            'balance_payment_method',
+            'balance_payment_time',
+            'balance_status',
+        ])
+
+        locked_booking.status = 'completed'
+        locked_booking.save(update_fields=['status'])
+
+        locked_slot.status = 'available'
+        locked_slot.save(update_fields=['status'])
+
+    messages.success(
+        request,
+        f'Balance payment of ₹{balance_paid} completed successfully.'
     )
+
+    return redirect('booking_history')
 
 
 # =========================================================
@@ -2584,19 +2646,85 @@ def qr_code(request, booking_id):
 
 
 # =========================================================
+# MY BOOKINGS - ACTIVE AND UPCOMING BOOKINGS
+# =========================================================
+
+@login_required
+def my_bookings(request):
+    print("MY BOOKINGS USER:", request.user.username)
+
+    # Show only reserved and active bookings.
+    bookings = Booking.objects.filter(
+        user=request.user,
+        status__in=['reserved', 'active']
+    ).select_related(
+        'location',
+        'slot',
+        'payment'
+    ).order_by('-created_at')
+
+    print("MY BOOKINGS COUNT:", bookings.count())
+
+    for booking in bookings:
+        booked_duration_seconds = (
+            booking.reservation_expiry -
+            booking.expected_arrival
+        ).total_seconds()
+
+        booking.booked_duration_display = format_duration(
+            booked_duration_seconds
+        )
+
+        if booking.actual_entry_time and booking.actual_exit_time:
+            actual_duration_seconds = (
+                booking.actual_exit_time -
+                booking.actual_entry_time
+            ).total_seconds()
+
+            booking.actual_duration_display = format_duration(
+                actual_duration_seconds
+            )
+        else:
+            booking.actual_duration_display = None
+
+        # Safely get the payment record.
+        booking.payment_obj = getattr(
+            booking, 'payment', None
+        )
+
+        payment = booking.payment_obj
+
+        # Allow cancellation of reserved bookings before parking starts.
+        # Payment does not prevent cancellation.
+        booking.can_cancel = (
+            booking.status == 'reserved'
+            and not booking.actual_entry_time
+            and not booking.actual_exit_time
+        )
+
+    return render(
+        request,
+        'parking/my_bookings.html',
+        {'bookings': bookings}
+    )
+
+
+
+# =========================================================
 # BOOKING HISTORY
 # =========================================================
 
+@login_required
 def booking_history(request):
 
+    # Show only completed and cancelled bookings.
     bookings = Booking.objects.filter(
-        user=request.user
+        user=request.user,
+        status__in=['completed', 'cancelled']
     ).select_related(
         'location',
         'slot'
-    ).order_by(
-        '-created_at'
-    )
+    ).order_by('-created_at')
 
     for booking_obj in bookings:
 
@@ -2605,46 +2733,122 @@ def booking_history(request):
             booking_obj.expected_arrival
         ).total_seconds()
 
-        booking_obj.booked_duration_display = (
-            format_duration(
-                booked_duration_seconds
-            )
+        booking_obj.booked_duration_display = format_duration(
+            booked_duration_seconds
         )
 
         if (
-            booking_obj.actual_entry_time and
-            booking_obj.actual_exit_time
+            booking_obj.actual_entry_time
+            and booking_obj.actual_exit_time
         ):
-
             actual_duration_seconds = (
                 booking_obj.actual_exit_time -
                 booking_obj.actual_entry_time
             ).total_seconds()
 
-            booking_obj.actual_duration_display = (
-                format_duration(
-                    actual_duration_seconds
-                )
+            booking_obj.actual_duration_display = format_duration(
+                actual_duration_seconds
             )
-
         else:
-
             booking_obj.actual_duration_display = None
 
+        # Safely get the payment record.
         booking_obj.payment_obj = getattr(
-            booking_obj,
-            'payment',
-            None
+            booking_obj, 'payment', None
         )
 
     return render(
         request,
         'parking/booking_history.html',
-        {
-            'bookings': bookings
-        }
+        {'bookings': bookings}
     )
 
+
+# =========================================================
+# CANCEL BOOKING
+# =========================================================
+
+@login_required
+@require_POST
+def cancel_booking(request, booking_id):
+
+    with transaction.atomic():
+        booking_obj = get_object_or_404(
+            Booking.objects.select_for_update(),
+            id=booking_id,
+            user=request.user
+        )
+
+        # Only reserved bookings can be cancelled.
+        if booking_obj.status != 'reserved':
+            messages.error(
+                request,
+                'Only reserved bookings can be cancelled.'
+            )
+            return redirect('booking_history')
+
+        # Do not allow cancellation after parking has started.
+        if booking_obj.actual_entry_time or booking_obj.actual_exit_time:
+            messages.error(
+                request,
+                'This booking cannot be cancelled because the parking process has started.'
+            )
+            return redirect('booking_history')
+
+        payment = Payment.objects.filter(
+            booking=booking_obj
+        ).first()
+
+        # Calculate the refund only from an advance payment
+        # that was actually recorded as paid.
+        if payment:
+            if payment.refund_status == 'refunded':
+                messages.error(
+                    request,
+                    'A refund has already been recorded for this booking.'
+                )
+                return redirect('booking_history')
+
+            if payment.advance_status == 'paid':
+                advance_paid = payment.advance_amount or Decimal('0.00')
+
+                refund_amount = (
+                    advance_paid * Decimal('0.25')
+                ).quantize(Decimal('0.01'))
+
+                cancellation_charge = advance_paid - refund_amount
+
+                payment.refund_amount = refund_amount
+                payment.cancellation_charge = cancellation_charge
+                payment.refund_status = (
+                    'refunded'
+                    if refund_amount > Decimal('0.00')
+                    else 'not_applicable'
+                )
+
+            else:
+                payment.refund_amount = Decimal('0.00')
+                payment.cancellation_charge = Decimal('0.00')
+                payment.refund_status = 'not_applicable'
+
+            payment.save(update_fields=[
+                'refund_amount',
+                'cancellation_charge',
+                'refund_status',
+            ])
+
+        # Cancel the booking.
+        booking_obj.status = 'cancelled'
+        booking_obj.save(update_fields=['status'])
+
+    messages.success(
+        request,
+        'Booking cancelled successfully. The 25% advance refund has been recorded.'
+        if payment and payment.refund_status == 'refunded'
+        else f'Booking #{booking_obj.id} cancelled successfully.'
+    )
+
+    return redirect('booking_history')
 
 # =========================================================
 # COMPLAINT SECTION

@@ -375,7 +375,10 @@
                 Find Parking
             </a>
 
-           
+            <a href="/my-bookings/">
+                <span class="menu-icon">▣</span>
+                My Bookings
+            </a>
 
             <a href="/booking-history/">
                 <span class="menu-icon">◷</span>
@@ -422,15 +425,16 @@
             </div>
 
             <div class="customer">
-                <div class="customer-info">
-                    <strong>Customer</strong>
-                    <span>ParkGrid User</span>
-                </div>
+<div class="customer">
+    <div class="customer-info">
+        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <span>ParkGrid User</span>
+    </div>
 
-                <div class="avatar">
-                    U
-                </div>
-            </div>
+    <div class="avatar">
+        {{ request.user.username|first|upper }}
+    </div>
+</div>
 
         </header>
 

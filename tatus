@@ -1,0 +1,15 @@
+ parking/models.py                                  |   53 [32m+[m
+ parking/templates/parking/advance_payment.html     |  113 [32m+[m[31m-[m
+ .../templates/parking/booking_confirmation.html    |   74 [32m+[m[31m-[m
+ parking/templates/parking/booking_history.html     | 1139 [32m+++++++++++[m[31m------[m
+ parking/templates/parking/complaint_status.html    |    6 [32m+[m[31m-[m
+ parking/templates/parking/complaints.html          |    6 [32m+[m[31m-[m
+ parking/templates/parking/dashboard.html           |  291 [32m++[m[31m---[m
+ parking/templates/parking/manager_bookings.html    |  588 [32m+++++[m[31m----[m
+ parking/templates/parking/my_bookings.html         | 1082 [32m+++++++++++++[m[31m---[m
+ parking/templates/parking/parking_layout.html      |    3 [32m+[m
+ parking/templates/parking/parking_list.html        |   22 [32m+[m[31m-[m
+ parking/templates/parking/qr_scan_result.html      |  392 [32m++[m[31m----[m
+ parking/views.py                                   | 1294 [32m+++++++++++[m[31m---------[m
+ parking_system/urls.py                             |   13 [32m+[m
+ 14 files changed, 3150 insertions(+), 1926 deletions(-)

@@ -98,6 +98,13 @@ urlpatterns = [
     views.advance_payment,
     name='advance_payment'
     ),
+    
+path(
+    'balance-payment/<int:booking_id>/',
+    views.balance_payment,
+    name='balance_payment'
+),
+
 
     path(
         'qr-code/<int:booking_id>/',
@@ -125,6 +132,12 @@ path(
         views.booking_history,
         name='booking_history'
     ),
+path('my-bookings/', views.my_bookings, name='my_bookings'),   
+ path(
+    'booking/<int:booking_id>/cancel/',
+    views.cancel_booking,
+    name='cancel_booking'
+),
 
 
     # =====================================================

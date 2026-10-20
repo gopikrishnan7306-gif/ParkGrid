@@ -1,19 +1,12 @@
+html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ParkGrid | Parking Details</title>
 
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -95,12 +88,12 @@
             border-bottom: none;
         }
 
-        .detail-label {
+        .detail-label, .payment-label {
             color: #777;
             font-size: 14px;
         }
 
-        .detail-value {
+        .detail-value, .payment-value {
             color: #222;
             font-size: 14px;
             font-weight: 600;
@@ -138,16 +131,6 @@
             font-size: 14px;
         }
 
-        .payment-label {
-            color: #777;
-        }
-
-        .payment-value {
-            font-weight: 600;
-            color: #222;
-            text-align: right;
-        }
-
         .advance-box {
             background: #2474ff;
             color: white;
@@ -180,7 +163,7 @@
             margin-bottom: 12px;
         }
 
-        .action-button {
+        .action-button, .back-button {
             display: block;
             width: 100%;
             padding: 14px;
@@ -236,17 +219,10 @@
         }
 
         .back-button {
-            display: block;
-            width: 100%;
             margin-top: 15px;
-            padding: 13px;
-            border-radius: 12px;
             background: #f1f3f5;
             color: #333;
-            text-align: center;
-            text-decoration: none;
             font-size: 14px;
-            font-weight: 600;
         }
 
         .back-button:hover {
@@ -281,420 +257,210 @@
             color: #999;
             font-size: 12px;
         }
-
     </style>
-
 </head>
 
 <body>
-
 <div class="container">
 
     {% if booking %}
 
-        <div class="logo">
-            ParkGrid
-        </div>
-
-        <div class="subtitle">
-            Smart Parking Management
-        </div>
-
-        <div class="success-icon">
-            ✓
-        </div>
-
-        <div class="heading">
-            Parking Details
-        </div>
-
-
-        <!-- BOOKING DETAILS -->
+        <div class="logo">ParkGrid</div>
+        <div class="subtitle">Smart Parking Management</div>
+        <div class="success-icon">✓</div>
+        <div class="heading">Parking Details</div>
 
         <div class="details">
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Booking ID
-                </span>
-
-                <span class="detail-value">
-                    #{{ booking.id }}
-                </span>
+                <span class="detail-label">Booking ID</span>
+                <span class="detail-value">#{{ booking.id }}</span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Customer
-                </span>
-
+                <span class="detail-label">Customer</span>
                 <span class="detail-value">
                     {{ booking.user.first_name|default:booking.user.username }}
                 </span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Vehicle Number
-                </span>
-
-                <span class="detail-value">
-                    {{ booking.vehicle_number }}
-                </span>
+                <span class="detail-label">Vehicle Number</span>
+                <span class="detail-value">{{ booking.vehicle_number }}</span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Vehicle Type
-                </span>
-
-                <span class="detail-value">
-                    {{ booking.get_vehicle_type_display }}
-                </span>
+                <span class="detail-label">Vehicle Type</span>
+                <span class="detail-value">{{ booking.get_vehicle_type_display }}</span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Parking Facility
-                </span>
-
-                <span class="detail-value">
-                    {{ booking.location.name }}
-                </span>
+                <span class="detail-label">Parking Facility</span>
+                <span class="detail-value">{{ booking.location.name }}</span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Parking Slot
-                </span>
-
-                <span class="detail-value">
-                    {{ booking.slot.slot_number }}
-                </span>
+                <span class="detail-label">Parking Slot</span>
+                <span class="detail-value">{{ booking.slot.slot_number }}</span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Expected Arrival
-                </span>
-
+                <span class="detail-label">Expected Arrival</span>
                 <span class="detail-value">
                     {{ booking.expected_arrival|date:"d M Y, h:i A" }}
                 </span>
             </div>
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Booked Duration
-                </span>
-
-                <span class="detail-value">
-                    {{ booked_duration_display }}
-                </span>
+                <span class="detail-label">Booked Duration</span>
+                <span class="detail-value">{{ booked_duration_display }}</span>
             </div>
 
-
             {% if booking.actual_entry_time %}
-
                 <div class="detail-row">
-                    <span class="detail-label">
-                        Actual Entry
-                    </span>
-
+                    <span class="detail-label">Actual Entry</span>
                     <span class="detail-value">
                         {{ booking.actual_entry_time|date:"d M Y, h:i A" }}
                     </span>
                 </div>
-
             {% endif %}
 
-
             {% if booking.actual_exit_time %}
-
                 <div class="detail-row">
-                    <span class="detail-label">
-                        Actual Exit
-                    </span>
-
+                    <span class="detail-label">Actual Exit</span>
                     <span class="detail-value">
                         {{ booking.actual_exit_time|date:"d M Y, h:i A" }}
                     </span>
                 </div>
-
             {% endif %}
-
 
             {% if actual_duration_display %}
-
                 <div class="detail-row">
-                    <span class="detail-label">
-                        Actual Duration
-                    </span>
-
-                    <span class="detail-value">
-                        {{ actual_duration_display }}
-                    </span>
+                    <span class="detail-label">Actual Duration</span>
+                    <span class="detail-value">{{ actual_duration_display }}</span>
                 </div>
-
             {% endif %}
 
-
             <div class="detail-row">
-                <span class="detail-label">
-                    Booking Status
-                </span>
-
+                <span class="detail-label">Booking Status</span>
                 <span class="detail-value">
-                    <span class="status">
-                        {{ booking.get_status_display }}
-                    </span>
+                    <span class="status">{{ booking.get_status_display }}</span>
                 </span>
             </div>
-
         </div>
 
-
-        <!-- PAYMENT DETAILS -->
-
         {% if payment %}
-
             <div class="payment-box">
-
-                <div class="payment-title">
-                    Advance Payment
-                </div>
-
+                <div class="payment-title">Advance Payment</div>
 
                 <div class="payment-row">
-
-                    <span class="payment-label">
-                        Advance Amount
-                    </span>
-
-                    <span class="payment-value">
-                        ₹{{ payment.advance_amount }}
-                    </span>
-
+                    <span class="payment-label">Advance Amount</span>
+                    <span class="payment-value">₹{{ payment.advance_amount }}</span>
                 </div>
 
-
                 <div class="payment-row">
-
-                    <span class="payment-label">
-                        Payment Method
-                    </span>
-
+                    <span class="payment-label">Payment Method</span>
                     <span class="payment-value">
                         {{ payment.get_advance_payment_method_display }}
                     </span>
-
                 </div>
 
-
                 <div class="payment-row">
-
-                    <span class="payment-label">
-                        Payment Status
-                    </span>
-
+                    <span class="payment-label">Payment Status</span>
                     <span class="payment-value">
                         {{ payment.get_advance_status_display }}
                     </span>
-
                 </div>
-
             </div>
-
 
             <div class="advance-box">
-
-                <div class="amount-label">
-                    Advance Paid
-                </div>
-
-                <div class="amount">
-                    ₹{{ payment.advance_amount }}
-                </div>
-
+                <div class="amount-label">Advance Paid</div>
+                <div class="amount">₹{{ payment.advance_amount }}</div>
             </div>
 
-
-            <!-- RESERVED + PAID -->
-
             {% if booking.status == 'reserved' and payment.advance_status == 'paid' %}
-
                 <div class="action-box">
+                    <div class="action-title">Vehicle Arrival</div>
+                    <p class="note">
+                        Scan this booking QR code again when the vehicle arrives
+                        to record entry.
+                    </p>
+                </div>
 
-                    <div class="action-title">
-                        Vehicle Arrival
+            {% elif booking.status == 'active' and not booking.actual_exit_time %}
+                <div class="action-box">
+                    <div class="action-title">Vehicle is Parked</div>
+                    <p class="note">
+                        Scan this booking QR code at exit to calculate the final
+                        parking amount.
+                    </p>
+                </div>
+
+            {% elif booking.status == 'active' and payment.balance_amount > 0 %}
+                <div class="payment-box">
+                    <div class="payment-title">Balance Payment</div>
+
+                    <div class="payment-row">
+                        <span class="payment-label">Final Amount</span>
+                        <span class="payment-value">₹{{ payment.final_amount }}</span>
                     </div>
 
-                    <a
-                        href="{% url 'manager_mark_entry' booking.id %}"
-                        class="action-button entry-button"
-                    >
-                        ✓ Mark Entry
-                    </a>
-
-                </div>
-
-                <div class="note">
-                    The advance payment has been received.
-                    Mark the vehicle entry when the customer arrives.
-                </div>
-
-
-            <!-- ACTIVE -->
-
-            {% elif booking.status == 'active' %}
-
-                <div class="action-box">
-
-                    <div class="action-title">
-                        Vehicle Exit
+                    <div class="payment-row">
+                        <span class="payment-label">Advance Paid</span>
+                        <span class="payment-value">₹{{ payment.advance_amount }}</span>
                     </div>
 
-                    <a
-                        href="{% url 'manager_mark_exit' booking.id %}"
-                        class="action-button exit-button"
-                    >
-                        ✓ Mark Exit & Calculate Final Charge
-                    </a>
+                    <div class="payment-row">
+                        <span class="payment-label">Balance Due</span>
+                        <span class="payment-value">₹{{ payment.balance_amount }}</span>
+                    </div>
 
+                    <p class="note">
+                        The balance is pending. The parking slot should remain
+                        occupied until payment is completed.
+                    </p>
                 </div>
-
-                <div class="note">
-                    The final parking charge will be calculated
-                    automatically using the actual parking duration.
-                </div>
-
-
-            <!-- COMPLETED -->
 
             {% elif booking.status == 'completed' %}
-
                 <div class="completed-box">
-
-                    <div class="completed-title">
-                        ✓ Parking Completed
-                    </div>
-
+                    <div class="completed-title">Parking Completed</div>
 
                     <div class="payment-row">
-
-                        <span class="payment-label">
-                            Final Parking Charge
-                        </span>
-
-                        <span class="payment-value">
-                            ₹{{ payment.final_amount }}
-                        </span>
-
+                        <span class="payment-label">Final Amount</span>
+                        <span class="payment-value">₹{{ payment.final_amount }}</span>
                     </div>
 
-
                     <div class="payment-row">
-
-                        <span class="payment-label">
-                            Advance Paid
-                        </span>
-
-                        <span class="payment-value">
-                            ₹{{ payment.advance_amount }}
-                        </span>
-
-                    </div>
-
-
-                    <div class="payment-row">
-
-                        <span class="payment-label">
-                            Balance
-                        </span>
-
-                        <span class="payment-value">
-                            ₹{{ payment.balance_amount }}
-                        </span>
-
-                    </div>
-
-
-                    <div class="payment-row">
-
-                        <span class="payment-label">
-                            Balance Status
-                        </span>
-
+                        <span class="payment-label">Balance Status</span>
                         <span class="payment-value">
                             {{ payment.get_balance_status_display }}
                         </span>
-
                     </div>
-
                 </div>
-
-
-            {% else %}
-
-                <div class="note">
-                    Final parking charge will be calculated when the
-                    vehicle exits based on the actual parking duration.
-                </div>
-
             {% endif %}
 
-
         {% else %}
-
-            <div class="note">
-                Advance payment has not been completed for this booking.
+            <div class="error-box">
+                <div class="error-title">Payment Not Found</div>
+                <div class="error-text">
+                    No payment record is available for this booking.
+                </div>
             </div>
-
         {% endif %}
 
-
-        <a
-            href="{% url 'manager_bookings' %}"
-            class="back-button"
-        >
-            ← Back to Bookings
+        <a href="{% url 'manager_bookings' %}" class="back-button">
+            Back to Manager Bookings
         </a>
 
-
-        <div class="footer">
-            Generated by ParkGrid
-        </div>
-
-
     {% else %}
-
         <div class="error-box">
-
-            <div class="error-icon">
-                ⚠️
-            </div>
-
-            <div class="error-title">
-                Invalid QR Code
-            </div>
-
+            <div class="error-icon">!</div>
+            <div class="error-title">Invalid QR Code</div>
             <div class="error-text">
                 {{ error|default:"The booking could not be found." }}
             </div>
-
         </div>
-
     {% endif %}
 
 </div>
-
 </body>
-
 </html>

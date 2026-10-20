@@ -1,0 +1,401 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings | ParkGrid</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 25px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            color: #243247;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #64748b;
+        }
+
+        .back-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .booking-card {
+            background: white;
+            padding: 22px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+        }
+
+        .booking-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .booking-top h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .status {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status.progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status.reserved {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .status.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .detail {
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .detail strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .detail span {
+            overflow-wrap: anywhere;
+        }
+
+        .payment {
+            padding: 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            line-height: 1.9;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn.secondary {
+            background: #475569;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 45px 20px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .empty a {
+            color: #2563eb;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            .booking-card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h1>My Bookings</h1>
+            <p class="subtitle">
+                View your upcoming and active parking bookings.
+            </p>
+        </div>
+
+        <a class="back-link" href="{% url 'user_dashboard' %}">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    {% for booking in bookings %}
+
+        <div class="booking-card">
+
+            <div class="booking-top">
+                <h2>Booking #{{ booking.id }}</h2>
+
+                {% if booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}
+                    <span class="status pending">
+                        Exited — Balance Pending
+                    </span>
+
+                {% elif booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'paid' %}
+                    <span class="status completed">
+                        Completed
+                    </span>
+
+                {% elif booking.status == 'active' and booking.actual_exit_time %}
+                    <span class="status pending">
+                        Exit Recorded
+                    </span>
+
+                {% elif booking.status == 'active' %}
+                    <span class="status progress">
+                        Parking in Progress
+                    </span>
+
+                {% elif booking.status == 'reserved' %}
+                    <span class="status reserved">
+                        Reserved
+                    </span>
+
+                {% else %}
+                    <span class="status">
+                        {{ booking.get_status_display }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="details">
+
+                <div class="detail">
+                    <strong>Parking Location</strong>
+                    <span>{{ booking.location.name }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Address</strong>
+                    <span>{{ booking.location.address }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Parking Slot</strong>
+                    <span>{{ booking.slot.slot_number }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Vehicle Number</strong>
+                    <span>{{ booking.vehicle_number }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Vehicle Type</strong>
+                    <span>{{ booking.get_vehicle_type_display }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Booking Date</strong>
+                    <span>{{ booking.booking_date|date:"d M Y" }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Expected Arrival</strong>
+                    <span>{{ booking.expected_arrival|date:"d M Y, h:i A" }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Reservation Ends</strong>
+                    <span>{{ booking.reservation_expiry|date:"d M Y, h:i A" }}</span>
+                </div>
+
+                <div class="detail">
+                    <strong>Booked Duration</strong>
+                    <span>{{ booking.booked_duration_display }}</span>
+                </div>
+
+                {% if booking.actual_entry_time %}
+                    <div class="detail">
+                        <strong>Actual Entry</strong>
+                        <span>{{ booking.actual_entry_time|date:"d M Y, h:i A" }}</span>
+                    </div>
+                {% endif %}
+
+                {% if booking.actual_exit_time %}
+                    <div class="detail">
+                        <strong>Actual Exit</strong>
+                        <span>{{ booking.actual_exit_time|date:"d M Y, h:i A" }}</span>
+                    </div>
+                {% endif %}
+
+                {% if booking.actual_duration_display %}
+                    <div class="detail">
+                        <strong>Actual Parking Duration</strong>
+                        <span>{{ booking.actual_duration_display }}</span>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <div class="payment">
+                <strong>Payment Details</strong><br>
+
+                {% if booking.payment_obj %}
+
+                    Advance Amount:
+                    ₹{{ booking.payment_obj.advance_amount }}<br>
+
+                    Advance Payment:
+                    {{ booking.payment_obj.get_advance_status_display }}<br>
+
+                    Final Parking Charge:
+                    ₹{{ booking.payment_obj.final_amount }}<br>
+
+                    Balance Amount:
+                    ₹{{ booking.payment_obj.balance_amount }}<br>
+
+                    Balance Payment:
+                    {{ booking.payment_obj.get_balance_status_display }}
+
+                    {% if booking.payment_obj.advance_status == 'pending' %}
+                        <p>Complete your advance payment to proceed.</p>
+
+                    {% elif booking.payment_obj.advance_status == 'failed' %}
+                        <p>Your advance payment failed. Please try again.</p>
+                    {% endif %}
+
+                    {% if booking.actual_exit_time and booking.payment_obj.balance_status == 'pending' %}
+                        <p>
+                            <strong>
+                                Exit recorded. Please pay your pending balance to complete the booking.
+                            </strong>
+                        </p>
+                    {% endif %}
+
+                {% else %}
+
+                    <p>Advance payment has not been started.</p>
+
+                {% endif %}
+            </div>
+
+            <div class="actions">
+
+                {% if booking.status == 'reserved' %}
+
+                    {% if not booking.payment_obj or booking.payment_obj.advance_status != 'paid' %}
+                        <a class="btn"
+                           href="{% url 'advance_payment' booking.id %}">
+                            Pay Advance
+                        </a>
+                    {% else %}
+                        <a class="btn"
+                           href="{% url 'qr_code' booking.id %}">
+                            View Booking QR
+                        </a>
+                    {% endif %}
+
+                {% elif booking.status == 'active' %}
+
+                    {% if booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}
+                        <a class="btn"
+                           href="{% url 'balance_payment' booking.id %}">
+                            Pay Balance
+                        </a>
+
+                    {% elif not booking.actual_exit_time %}
+                        <span>Parking session in progress</span>
+                    {% endif %}
+
+                {% endif %}
+
+                <a class="btn secondary"
+                   href="{% url 'booking_history' %}">
+                    View Booking History
+                </a>
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <div class="empty">
+            <h2>No Active or Upcoming Bookings</h2>
+
+            <p>You do not have any reserved or active bookings right now.</p>
+
+            <a href="{% url 'parking_list' %}">
+                Find Parking
+            </a>
+        </div>
+
+    {% endfor %}
+
+</div>
+</body>
+</html>
+```
