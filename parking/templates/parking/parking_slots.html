@@ -387,29 +387,29 @@
         value="{{ request.GET.duration }}"
     >
 
-    <div class="form-group">
+    
+<div class="form-group">
 
-        <label for="vehicle_type">
-            Vehicle Type
-        </label>
+    <label for="vehicle_type">
+        Vehicle Type
+    </label>
 
-        <select
-            name="vehicle_type"
-            id="vehicle_type"
-            required
-        >
-            <option value="">Select vehicle type</option>
+    <input
+        type="text"
+        id="vehicle_type_display"
+        value="{% if slot.vehicle_type == 'two_wheeler' %}Two Wheeler{% elif slot.vehicle_type == 'four_wheeler' %}Four Wheeler{% else %}{{ slot.vehicle_type }}{% endif %}"
+        readonly
+    >
 
-            <option value="two_wheeler">
-                Two Wheeler
-            </option>
+    <input
+        type="hidden"
+        name="vehicle_type"
+        id="vehicle_type"
+        value="{{ slot.vehicle_type }}"
+    >
 
-            <option value="four_wheeler">
-                Four Wheeler
-            </option>
-        </select>
+</div>
 
-    </div>
 
     <div class="form-group">
 

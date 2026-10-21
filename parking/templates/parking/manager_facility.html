@@ -177,6 +177,118 @@
                     <span style="color:red;">● Inactive</span>
                 {% endif %}
             </div>
+            
+<div class="info">
+    <div class="label">Current Grace Period</div>
+    <div class="value">{{ location.grace_period_minutes }} minutes</div>
+</div>
+
+<hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+<hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+<h2>Parking Rate Settings</h2>
+
+<p style="color: #666; line-height: 1.6;">
+    Set the base charge for the first hour and the additional charge
+    for each extra hour. Changes apply to calculations using the current
+    facility rates.
+</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="update_rates">
+
+    <label for="edit_two_wheeler_base_rate">
+        Two-Wheeler Base Rate (First Hour) — Rs
+    </label>
+    <input
+        type="number"
+        id="edit_two_wheeler_base_rate"
+        name="two_wheeler_base_rate"
+        min="0"
+        max="999999.99"
+        step="0.01"
+        value="{{ location.two_wheeler_base_rate }}"
+        required
+    >
+
+    <label for="edit_two_wheeler_extra_hour_rate">
+        Two-Wheeler Extra-Hour Rate — Rs
+    </label>
+    <input
+        type="number"
+        id="edit_two_wheeler_extra_hour_rate"
+        name="two_wheeler_extra_hour_rate"
+        min="0"
+        max="999999.99"
+        step="0.01"
+        value="{{ location.two_wheeler_extra_hour_rate }}"
+        required
+    >
+
+    <label for="edit_four_wheeler_base_rate">
+        Four-Wheeler Base Rate (First Hour) — Rs
+    </label>
+    <input
+        type="number"
+        id="edit_four_wheeler_base_rate"
+        name="four_wheeler_base_rate"
+        min="0"
+        max="999999.99"
+        step="0.01"
+        value="{{ location.four_wheeler_base_rate }}"
+        required
+    >
+
+    <label for="edit_four_wheeler_extra_hour_rate">
+        Four-Wheeler Extra-Hour Rate — Rs
+    </label>
+    <input
+        type="number"
+        id="edit_four_wheeler_extra_hour_rate"
+        name="four_wheeler_extra_hour_rate"
+        min="0"
+        max="999999.99"
+        step="0.01"
+        value="{{ location.four_wheeler_extra_hour_rate }}"
+        required
+    >
+
+    <button type="submit" class="submit-btn">
+        Update Parking Rates
+    </button>
+</form>
+
+<h2>Grace Period Settings</h2>
+
+<p style="color: #666; line-height: 1.6;">
+    Set how long a customer can arrive after their expected arrival
+    time before you are allowed to mark the booking as a no-show.
+</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <input type="hidden" name="action" value="update_grace_period">
+
+    <label for="grace_period_minutes">Grace Period (minutes)</label>
+
+    <input
+        type="number"
+        id="grace_period_minutes"
+        name="grace_period_minutes"
+        min="1"
+        max="180"
+        value="{{ location.grace_period_minutes }}"
+        required
+    >
+
+    <button type="submit" class="submit-btn">
+        Update Grace Period
+    </button>
+</form>
+
 
             <div class="info">
                 <div class="label">Registered On</div>
@@ -224,6 +336,64 @@
                     placeholder="Enter city"
                     required
                 >
+                
+<hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+<h2>Parking Rates (Rs)</h2>
+
+<p style="color: #666; line-height: 1.6;">
+    Set the base charge for the first hour and the additional charge
+    for each extra hour. These rates will be used to calculate parking fees.
+</p>
+
+<label for="two_wheeler_base_rate">Two-Wheeler Base Rate (First Hour)</label>
+<input
+    type="number"
+    id="two_wheeler_base_rate"
+    name="two_wheeler_base_rate"
+    min="0"
+    max="999999.99"
+    step="0.01"
+    value="30.00"
+    required
+>
+
+<label for="two_wheeler_extra_hour_rate">Two-Wheeler Extra-Hour Rate</label>
+<input
+    type="number"
+    id="two_wheeler_extra_hour_rate"
+    name="two_wheeler_extra_hour_rate"
+    min="0"
+    max="999999.99"
+    step="0.01"
+    value="10.00"
+    required
+>
+
+<label for="four_wheeler_base_rate">Four-Wheeler Base Rate (First Hour)</label>
+<input
+    type="number"
+    id="four_wheeler_base_rate"
+    name="four_wheeler_base_rate"
+    min="0"
+    max="999999.99"
+    step="0.01"
+    value="60.00"
+    required
+>
+
+<label for="four_wheeler_extra_hour_rate">Four-Wheeler Extra-Hour Rate</label>
+<input
+    type="number"
+    id="four_wheeler_extra_hour_rate"
+    name="four_wheeler_extra_hour_rate"
+    min="0"
+    max="999999.99"
+    step="0.01"
+    value="20.00"
+    required
+>
+
 
                 <button type="submit" class="submit-btn">
                     Add Parking Facility

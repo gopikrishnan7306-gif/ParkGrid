@@ -361,6 +361,96 @@
         </div>
 
     </div>
+    
+    
+    <!-- PENDING WARNING REVIEWS -->
+    <section style="margin-top: 28px; padding: 22px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h2 style="margin-bottom: 16px;">Pending Warning Reviews</h2>
+
+        {% for warning in pending_warning_reviews %}
+        <div style="padding: 18px; margin-bottom: 16px; border: 1px solid #f0c36d; border-radius: 10px; background: #fff8e6; color: #333;">
+
+            <strong>
+                {% if warning.level == 'final_warning' %}
+                    Final Warning
+                {% else %}
+                    Warning
+                {% endif %}
+            </strong>
+
+            <p style="margin: 8px 0;">{{ warning.message }}</p>
+
+            <p style="margin: 4px 0;">
+                <strong>Account:</strong> {{ warning.user.username }}
+            </p>
+
+            {% if warning.location %}
+            <p style="margin: 4px 0;">
+                <strong>Parking Facility:</strong> {{ warning.location.name }}
+            </p>
+            {% endif %}
+
+            <p style="margin: 4px 0;">
+                <strong>Warning Type:</strong> {{ warning.get_warning_type_display }}
+            </p>
+
+            <p style="margin: 4px 0;">
+                <strong>Occurrences:</strong> {{ warning.occurrence_count }}
+            </p>
+
+            <small>{{ warning.created_at|date:"d M Y, h:i A" }}</small>
+
+            <form method="post" action="{% url 'admin_review_warning' warning.id %}" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #ead8a8;">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 14px;">
+                    <label for="decision-{{ warning.id }}" style="display: block; font-weight: 600; margin-bottom: 6px;">
+                        Admin Decision
+                    </label>
+
+                    <select id="decision-{{ warning.id }}" name="admin_decision" required style="width: 100%; max-width: 420px; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                        <option value="">Select a decision</option>
+                        <option value="warning_upheld">Warning Upheld</option>
+                        <option value="warning_dismissed">Warning Dismissed</option>
+                        <option value="further_action">Further Action Required</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label for="reason-{{ warning.id }}" style="display: block; font-weight: 600; margin-bottom: 6px;">
+                        Review Reason / Action Details
+                    </label>
+
+                    <textarea id="reason-{{ warning.id }}" name="admin_review_reason" rows="4" required maxlength="5000" placeholder="Explain the decision and any action required..." style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label for="action-status-{{ warning.id }}" style="display: block; font-weight: 600; margin-bottom: 6px;">
+                        Further Action Status
+                    </label>
+
+                    <select id="action-status-{{ warning.id }}" name="admin_action_status" style="width: 100%; max-width: 420px; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                        <option value="">Not applicable</option>
+                        <option value="pending">Action Pending</option>
+                        <option value="completed">Action Completed</option>
+                    </select>
+
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        Required only when you select “Further Action Required”.
+                    </small>
+                </div>
+
+                <button type="submit" style="padding: 10px 18px; background: #2474ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    Submit Final Decision
+                </button>
+            </form>
+        </div>
+
+        {% empty %}
+        <p>No warning reviews are pending.</p>
+        {% endfor %}
+    </section>
+
 
 
     <!-- INFORMATION -->

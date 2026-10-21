@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkGrid | Nearby Parking</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f7f9;
+            color: #17212b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #102a43;
+            color: white;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .brand span {
+            color: #2ec4b6;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .header a:hover {
+            color: #2ec4b6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+            padding: 40px 22px;
+            flex: 1;
+        }
+
+        .heading {
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            font-size: 28px;
+            margin-bottom: 9px;
+        }
+
+        .heading p {
+            color: #627d98;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 15px rgba(16, 42, 67, 0.04);
+        }
+
+        .panel h2 {
+            font-size: 19px;
+            margin-bottom: 10px;
+        }
+
+        .panel p {
+            color: #627d98;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .controls input {
+            flex: 1;
+            min-width: 220px;
+            padding: 13px;
+            border: 1px solid #d5dee7;
+            border-radius: 7px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .controls input:focus {
+            border-color: #167d8d;
+            box-shadow: 0 0 0 3px rgba(22, 125, 141, 0.12);
+        }
+
+        button {
+            padding: 13px 18px;
+            border: none;
+            border-radius: 7px;
+            background: #167d8d;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #106574;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        .location-button {
+            background: #102a43;
+        }
+
+        .location-button:hover {
+            background: #243f58;
+        }
+
+        #message {
+            margin-top: 17px;
+            color: #334e68;
+            font-size: 13px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .info {
+            margin-top: 22px;
+            padding: 16px;
+            background: #eaf7f6;
+            border-radius: 8px;
+            color: #106574;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #829ab1;
+            font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .header {
+                padding: 18px;
+            }
+
+            .brand {
+                font-size: 22px;
+            }
+
+            .header a {
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 28px 15px;
+            }
+
+            .heading h1 {
+                font-size: 24px;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .controls input {
+                min-width: 100%;
+                width: 100%;
+            }
+
+            .controls button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+    <div class="brand">Park<span>Grid</span></div>
+    <a href="{% url 'user_dashboard' %}">← Back to Dashboard</a>
+</header>
+
+<main class="container">
+
+    <section class="heading">
+        <h1>Find Nearby Parking</h1>
+        <p>
+            Find parking places near your destination or current location
+            using Google Maps.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>📍 Search Parking Near a Place</h2>
+        <p>
+            Enter a place, area or landmark to explore nearby parking
+            locations on Google Maps.
+        </p>
+
+        <form id="place-form" class="controls">
+            <input
+                type="text"
+                id="place-input"
+                placeholder="Enter place (e.g., Kolenchery)"
+                aria-label="Enter a place name"
+                autocomplete="off"
+            >
+
+            <button type="submit" id="search-btn">
+                Search Parking
+            </button>
+        </form>
+
+        <div id="message" role="status" aria-live="polite">
+            Enter a place name or use your current location to begin.
+        </div>
+    </section>
+
+    
+
+       
+    <section class="info">
+        <strong>How it works</strong>
+        <p>
+            ParkGrid opens Google Maps in a new tab for nearby parking
+            searches and directions. Results, ratings and parking details
+            are provided by Google Maps and may vary by location.
+            Actual vacant-slot availability and booking confirmation
+            are not provided by this search.
+        </p>
+    </section>
+
+</main>
+
+<footer class="footer">
+    © 2026 ParkGrid · Nearby Parking
+</footer>
+
+<script>
+    const message = document.getElementById("message");
+    const findButton = document.getElementById("find-btn");
+    const searchButton = document.getElementById("search-btn");
+    const placeInput = document.getElementById("place-input");
+    const placeForm = document.getElementById("place-form");
+
+    function openGoogleMaps(query) {
+        const url =
+            "https://www.google.com/maps/search/?api=1&query=" +
+            encodeURIComponent(query);
+
+        // Called directly from a user action to reduce popup-blocking issues.
+        const mapsTab = window.open(
+            url,
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+        if (mapsTab) {
+            message.textContent =
+                "Google Maps has been opened in a new tab.";
+        } else {
+            message.textContent =
+                "A new tab was blocked. Opening Google Maps in this tab.";
+
+            window.location.href = url;
+        }
+    }
+
+    placeForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const place = placeInput.value.trim();
+
+        if (!place) {
+            message.textContent =
+                "Please enter a place name first.";
+            placeInput.focus();
+            return;
+        }
+
+        openGoogleMaps("parking near " + place);
+    });
+
+    findButton.addEventListener("click", function() {
+        if (!navigator.geolocation) {
+            message.textContent =
+                "Your browser does not support location access. Please search by place name instead.";
+            return;
+        }
+
+        findButton.disabled = true;
+        searchButton.disabled = true;
+
+        message.textContent =
+            "Getting your current location. Please allow location access.";
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                findButton.disabled = false;
+                searchButton.disabled = false;
+
+                openGoogleMaps(
+                    "parking near " + lat + "," + lon
+                );
+            },
+
+            function(error) {
+                const errors = {
+                    1: "Location permission denied. Allow location access or search by place name.",
+                    2: "Your location could not be determined. Please try again.",
+                    3: "Location request timed out. Please try again."
+                };
+
+                message.textContent =
+                    errors[error.code] ||
+                    "Unable to get your location. Please search by place name.";
+
+                findButton.disabled = false;
+                searchButton.disabled = false;
+            },
+
+            {
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 60000
+            }
+        );
+    });
+</script>
+
+</body>
+</html>

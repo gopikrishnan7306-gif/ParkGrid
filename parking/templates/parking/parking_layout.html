@@ -577,23 +577,51 @@
                         Select duration
                     </option>
 
-                    <option value="1" {% if duration == 1 %}selected{% endif %}>
+                                        <option value="30" {% if duration == 30 %}selected{% endif %}>
+                        30 Seconds (Testing)
+                    </option>
+
+                    <option value="60" {% if duration == 60 %}selected{% endif %}>
+                        1 Minute (Testing)
+                    </option>
+
+                    <option value="1800" {% if duration == 1800 %}selected{% endif %}>
+                        30 Minutes
+                    </option>
+
+                    <option value="3600" {% if duration == 3600 %}selected{% endif %}>
                         1 Hour
                     </option>
 
-                    <option value="2" {% if duration == 2 %}selected{% endif %}>
+                    <option value="5400" {% if duration == 5400 %}selected{% endif %}>
+                        1.5 Hours
+                    </option>
+
+                    <option value="7200" {% if duration == 7200 %}selected{% endif %}>
                         2 Hours
                     </option>
 
-                    <option value="3" {% if duration == 3 %}selected{% endif %}>
+                    <option value="9000" {% if duration == 9000 %}selected{% endif %}>
+                        2.5 Hours
+                    </option>
+
+                    <option value="10800" {% if duration == 10800 %}selected{% endif %}>
                         3 Hours
                     </option>
 
-                    <option value="4" {% if duration == 4 %}selected{% endif %}>
+                    <option value="12600" {% if duration == 12600 %}selected{% endif %}>
+                        3.5 Hours
+                    </option>
+
+                    <option value="14400" {% if duration == 14400 %}selected{% endif %}>
                         4 Hours
                     </option>
 
-                    <option value="5" {% if duration == 5 %}selected{% endif %}>
+                    <option value="16200" {% if duration == 16200 %}selected{% endif %}>
+                        4.5 Hours
+                    </option>
+
+                    <option value="18000" {% if duration == 18000 %}selected{% endif %}>
                         5 Hours
                     </option>
 
@@ -716,7 +744,7 @@
 
                                 <!-- BOOKED -->
 
-                                {% elif slot.id in booked_slot_ids %}
+                                {% elif selected_date and selected_time and duration and slot.id in booked_slot_ids %}
 
                                     <div class="space booked">
 
@@ -745,7 +773,7 @@
 
                                 <!-- OCCUPIED -->
 
-                                {% elif slot.status == 'occupied' %}
+                                {% elif selected_date and selected_time and duration and slot.status == 'occupied' %}
 
                                     <div class="space occupied">
 
@@ -969,7 +997,7 @@
 
                                 <!-- BOOKED -->
 
-                                {% elif slot.id in booked_slot_ids %}
+                                {% elif selected_date and selected_time and duration and slot.id in booked_slot_ids %}
 
                                     <div class="space booked">
 
@@ -998,7 +1026,7 @@
 
                                 <!-- OCCUPIED -->
 
-                                {% elif slot.status == 'occupied' %}
+                                {% elif selected_date and selected_time and duration and slot.status == 'occupied' %}
 
                                     <div class="space occupied">
 

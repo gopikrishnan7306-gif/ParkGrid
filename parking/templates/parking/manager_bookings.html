@@ -290,10 +290,10 @@
                                 {% if booking.status == 'reserved' %}
 
                                     <a
-                                        href="{% url 'scan_qr' booking.id %}"
+                                        href="{% url 'manager_qr_scanner' booking.id %}"
                                         class="action-btn qr-btn"
                                     >
-                                        View QR
+                                        Scan QR
                                     </a>
 
                                     {% if booking.payment and booking.payment.advance_status == 'paid' %}
@@ -312,6 +312,20 @@
                                             Awaiting advance payment
                                         </div>
                                     {% endif %}
+                                    
+                                    {% if booking.can_mark_no_show %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'manager_mark_no_show' booking.id %}"
+                                            class="action-form"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="action-btn">
+                                                Mark No-Show
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
 
                                 {% elif booking.status == 'active' %}
 
@@ -377,3 +391,4 @@
 </div>
 </body>
 </html>
+

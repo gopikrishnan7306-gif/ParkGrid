@@ -471,6 +471,10 @@
                 <span class="menu-icon">⌖</span>
                 Find Parking
             </a>
+            <a href="/nearby-pay-park/">
+    <span class="menu-icon">📍</span>
+    Nearby Pay &amp; Park
+</a>
 
             <a href="/my-bookings/">
                 <span class="menu-icon">▣</span>
@@ -558,6 +562,65 @@
 
             <!-- STATISTICS: DYNAMIC VALUES PRESERVED -->
             <section class="stats">
+                {% if warnings %}
+<section style="margin-bottom: 24px;">
+    <div class="section-heading">
+        <h2>Account Warnings</h2>
+        <span>Please review your booking activity</span>
+    </div>
+
+    {% for warning in warnings %}
+    <div style="padding: 16px; margin-bottom: 12px; border: 1px solid #f0c36d; border-radius: 10px; background: #fff8e6;">
+        <strong>
+            {% if warning.level == 'final_warning' %}
+                Final Warning
+            {% else %}
+                Warning
+            {% endif %}
+        </strong>
+
+        <p style="margin: 8px 0;">{{ warning.message }}</p>
+
+        <small>{{ warning.created_at|date:"d M Y, h:i A" }}</small>
+
+
+        {% if warning.requires_admin_review %}
+            <p style="margin-top: 8px; color: #9a6700;">
+                <strong>Admin Review:</strong> Pending
+            </p>
+        {% elif warning.admin_reviewed_at %}
+            <div style="margin-top: 12px; padding: 12px; background: #f0f7ff; border-radius: 8px; border: 1px solid #c7ddff;">
+                <p style="margin: 4px 0;">
+                    <strong>Admin Decision:</strong>
+                    {{ warning.get_admin_decision_display }}
+                </p>
+
+                <p style="margin: 4px 0;">
+                    <strong>Review Status:</strong> Reviewed
+                </p>
+
+                <p style="margin: 4px 0;">
+                    <strong>Review Reason:</strong>
+                    {{ warning.admin_review_reason|linebreaksbr }}
+                </p>
+
+                {% if warning.admin_decision == 'further_action' %}
+                    <p style="margin: 4px 0;">
+                        <strong>Action Status:</strong>
+                        {{ warning.get_admin_action_status_display|default:"Not specified" }}
+                    </p>
+                {% endif %}
+
+                <small>
+                    Reviewed on {{ warning.admin_reviewed_at|date:"d M Y, h:i A" }}
+                </small>
+            </div>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
 
                 <div class="stat-card">
                     <div class="stat-icon">▣</div>
@@ -618,6 +681,20 @@
                         View Bookings →
                     </a>
                 </div>
+                                <!-- NEARBY PAY & PARK -->
+                <div class="card">
+                    <div class="card-icon">📍</div>
+                    <h3>Nearby Pay &amp; Park</h3>
+                    <p>
+                        Find nearby parking locations around you
+                        and explore available parking spots.
+                    </p>
+                    <a href="/nearby-pay-park/" class="card-link">
+                        Find Nearby Parking →
+                    </a>
+                </div>
+
+
 
                 <!-- BOOKING HISTORY -->
                 <div class="card">

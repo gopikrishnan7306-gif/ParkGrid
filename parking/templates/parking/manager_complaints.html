@@ -161,6 +161,7 @@
                             <th>Date</th>
                             <th>Status</th>
                             <th>Response</th>
+                            <th>Verification</th>
                         </tr>
                     </thead>
 
@@ -215,6 +216,25 @@
                                         —
                                     {% endif %}
                                 </td>
+                                
+<td>
+    {% if complaint.is_valid %}
+        <span class="status resolved">
+            Verified as Valid
+        </span>
+    {% else %}
+        <form method="POST"
+              action="{% url 'manager_verify_complaint' complaint.id %}">
+            {% csrf_token %}
+            <button type="submit">
+                Mark as Valid
+            </button>
+        </form>
+    {% endif %}
+</td>
+
+
+
 
                             </tr>
 

@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from django.urls import path
 from parking import views
 
@@ -61,6 +61,19 @@ urlpatterns = [
     ),
 
     path(
+    'nearby-pay-park/',
+    views.nearby_pay_park,
+    name='nearby_pay_park'
+    ),
+    
+    path(
+    'api/nearby-parking/',
+    views.nearby_parking_data,
+    name='nearby_parking_data'
+    ),
+
+
+    path(
         'parking-layout/<int:location_id>/',
         views.parking_layout,
         name='parking_layout'
@@ -110,6 +123,16 @@ path(
         'qr-code/<int:booking_id>/',
         views.qr_code,
         name='qr_code'
+    ),
+    path(
+        'manager/scan-qr/<int:booking_id>/',
+        views.manager_qr_scanner,
+        name='manager_qr_scanner'
+    ),
+    path(
+        'manager/process-qr/<int:booking_id>/',
+        views.manager_process_qr_scan,
+        name='manager_process_qr_scan'
     ),
 path(
     'manager/booking/<int:booking_id>/entry/',
@@ -164,6 +187,11 @@ path(
         'parkgrid-admin/dashboard/',
         views.admin_dashboard,
         name='admin_dashboard'
+    ),
+        path(
+        'parkgrid-admin/warning-review/<int:warning_id>/',
+        views.admin_review_warning,
+        name='admin_review_warning'
     ),
 
 
@@ -270,6 +298,17 @@ path(
         views.manager_complaints,
         name='manager_complaints'
     ),
+    path(
+    'manager/complaints/<int:complaint_id>/verify/',
+    views.manager_verify_complaint,
+    name='manager_verify_complaint'
+),
+
+path(
+    'manager/booking/<int:booking_id>/no-show/',
+    views.manager_mark_no_show,
+    name='manager_mark_no_show'
+),
 
 
     # =====================================================
@@ -298,11 +337,15 @@ path(
     # ADMIN COMPLAINTS
     # =====================================================
 
-    path(
-        'parkgrid-admin/complaints/',
-        views.admin_complaints,
-        name='admin_complaints'
-    ),
+    
+path(
+    'parkgrid-admin/complaints/',
+    views.admin_complaints,
+    name='admin_complaints'
+),
+
+
+
 
 
     # =====================================================
@@ -315,3 +358,4 @@ path(
         name='admin_reports'
     ),
 ]
+

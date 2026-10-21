@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
+﻿from datetime import datetime, timedelta
 import base64
 from io import BytesIO
 import uuid
 from decimal import Decimal
-
+import requests
+from django.http import JsonResponse
 import qrcode
+from decimal import ROUND_HALF_UP
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -23,8 +25,10 @@ from .models import (
     ParkingSlot,
     Booking,
     Payment,
-    Complaint
+    Complaint,
+    WarningRecord
 )
+
 
 
 # =========================================================
@@ -32,13 +36,14 @@ from .models import (
 # =========================================================
 
 
+
 def calculate_parking_charge(location, vehicle_type, duration_seconds):
     """
     The base rate covers the first hour.
-    Extra parking time is charged proportionally by the second.
+    Durations below one hour are charged proportionally.
+    Extra time beyond the first hour is charged proportionally.
     """
-
-    from decimal import Decimal
+    from decimal import Decimal, ROUND_HALF_UP
 
     if vehicle_type == 'two_wheeler':
         base_rate = Decimal(str(location.two_wheeler_base_rate))
@@ -48,15 +53,25 @@ def calculate_parking_charge(location, vehicle_type, duration_seconds):
         extra_hour_rate = Decimal(str(location.four_wheeler_extra_hour_rate))
 
     duration_seconds = max(0, duration_seconds)
+    duration = Decimal(str(duration_seconds))
 
-    if duration_seconds == 0:
+    if duration == 0:
         final_amount = Decimal('0.00')
-    elif duration_seconds <= 3600:
-        final_amount = base_rate
+
+    elif duration <= Decimal('3600'):
+        final_amount = base_rate * duration / Decimal('3600')
+
     else:
-        extra_seconds = Decimal(str(duration_seconds - 3600))
-        extra_charge = extra_hour_rate * extra_seconds / Decimal('3600')
-        final_amount = (base_rate + extra_charge).quantize(Decimal('0.01'))
+        extra_seconds = duration - Decimal('3600')
+        extra_charge = (
+            extra_hour_rate * extra_seconds / Decimal('3600')
+        )
+        final_amount = base_rate + extra_charge
+
+    final_amount = final_amount.quantize(
+        Decimal('0.01'),
+        rounding=ROUND_HALF_UP
+    )
 
     return final_amount, base_rate, extra_hour_rate
 
@@ -165,7 +180,10 @@ def calculate_exit_balance(booking, payment):
         Decimal(str(extra_seconds)) *
         Decimal(str(extra_hour_rate)) /
         Decimal('3600')
-    ).quantize(Decimal('0.01'))
+    ).quantize(
+        Decimal('0.01'),
+        rounding=ROUND_HALF_UP
+    )
 
     final_amount = (
         booked_amount + extra_charge
@@ -437,11 +455,16 @@ def user_dashboard(request):
     total_complaints = Complaint.objects.filter(
         user=user
     ).count()
+    warnings = WarningRecord.objects.filter(
+    user=user,
+    warning_type='customer_no_show'
+    ).order_by('-created_at')
 
     context = {
         'total_bookings': total_bookings,
         'active_bookings': active_bookings,
         'total_complaints': total_complaints,
+        'warnings': warnings,
     }
 
     return render(
@@ -522,15 +545,18 @@ def parking_layout(request, location_id):
         selected_time and
         duration_value
     ):
-
         try:
+            duration = int(duration_value)
 
-            duration = int(
-                duration_value
-            )
+            allowed_durations = {
+                30, 60, 1800, 3600, 5400, 7200,
+                9000, 10800, 12600, 14400, 16200, 18000
+            }
 
-            if duration > 0:
+            if duration not in allowed_durations:
+                duration = None
 
+            else:
                 start_naive = datetime.strptime(
                     f'{selected_date} {selected_time}',
                     '%Y-%m-%d %H:%M'
@@ -542,7 +568,7 @@ def parking_layout(request, location_id):
 
                 end_time = (
                     start_time +
-                    timedelta(hours=duration)
+                    timedelta(seconds=duration)
                 )
 
                 conflicting_bookings = (
@@ -564,17 +590,13 @@ def parking_layout(request, location_id):
                     )
                 )
 
-                # -----------------------------------------
                 # 2-WHEELER EXTRA SLOT CHECK
-                # -----------------------------------------
-
                 regular_two_wheeler = slots.filter(
                     vehicle_type='two_wheeler',
                     is_extra=False
                 )
 
                 if regular_two_wheeler.exists():
-
                     all_two_wheeler_unavailable = all(
                         slot.id in booked_slot_ids
                         or slot.status in [
@@ -588,17 +610,13 @@ def parking_layout(request, location_id):
                         all_two_wheeler_unavailable
                     )
 
-                # -----------------------------------------
                 # 4-WHEELER EXTRA SLOT CHECK
-                # -----------------------------------------
-
                 regular_four_wheeler = slots.filter(
                     vehicle_type='four_wheeler',
                     is_extra=False
                 )
 
                 if regular_four_wheeler.exists():
-
                     all_four_wheeler_unavailable = all(
                         slot.id in booked_slot_ids
                         or slot.status in [
@@ -612,11 +630,7 @@ def parking_layout(request, location_id):
                         all_four_wheeler_unavailable
                     )
 
-        except (
-            ValueError,
-            TypeError
-        ):
-
+        except (ValueError, TypeError):
             duration = None
 
     return render(
@@ -734,6 +748,11 @@ def manager_dashboard(request):
         active_bookings = 0
         total_complaints = 0
 
+    warnings = WarningRecord.objects.filter(
+        user=manager,
+        warning_type='manager_complaints'
+    ).order_by('-created_at')
+
     context = {
         'location': location,
         'total_slots': total_slots,
@@ -742,6 +761,7 @@ def manager_dashboard(request):
         'total_bookings': total_bookings,
         'active_bookings': active_bookings,
         'total_complaints': total_complaints,
+        'warnings': warnings,
     }
 
     return render(
@@ -751,11 +771,22 @@ def manager_dashboard(request):
     )
 
 
+
+
 # =========================================================
 # MANAGER PARKING FACILITY
 # =========================================================
 
+
+@login_required
 def manager_facility(request):
+
+    if request.user.role != 'manager':
+        messages.error(
+            request,
+            'Only parking managers can access this page.'
+        )
+        return redirect('home')
 
     location = ParkingLocation.objects.filter(
         manager=request.user
@@ -763,44 +794,104 @@ def manager_facility(request):
 
     if request.method == 'POST':
 
-        if location:
+        # UPDATE GRACE PERIOD
+        if location and request.POST.get('action') == 'update_grace_period':
+            try:
+                grace_period = int(
+                    request.POST.get('grace_period_minutes', '')
+                )
+            except (TypeError, ValueError):
+                messages.error(request, 'Enter a valid grace period.')
+                return redirect('manager_facility')
 
-            messages.error(
+            if not 1 <= grace_period <= 180:
+                messages.error(
+                    request,
+                    'Grace period must be between 1 and 180 minutes.'
+                )
+                return redirect('manager_facility')
+
+            location.grace_period_minutes = grace_period
+            location.save(update_fields=['grace_period_minutes'])
+
+            messages.success(
                 request,
-                'You already have a parking facility.'
+                f'Grace period updated to {grace_period} minutes.'
+            )
+            return redirect('manager_facility')
+
+        # ADD OR UPDATE PARKING RATES
+        if location and request.POST.get('action') == 'update_rates':
+            target = location
+            success_message = 'Parking rates updated successfully!'
+        else:
+            # ADD FACILITY
+            if location:
+                messages.error(
+                    request,
+                    'You already have a parking facility.'
+                )
+                return redirect('manager_facility')
+
+            name = request.POST.get('name', '').strip()
+            address = request.POST.get('address', '').strip()
+            city = request.POST.get('city', '').strip()
+
+            if not name or not address or not city:
+                messages.error(
+                    request,
+                    'Please fill in all facility details.'
+                )
+                return redirect('manager_facility')
+
+            target = None
+            success_message = 'Parking facility added successfully!'
+
+        # Validate all four rates
+        from decimal import Decimal, InvalidOperation
+
+        rate_fields = {
+            'two_wheeler_base_rate': 'Two-wheeler base rate',
+            'two_wheeler_extra_hour_rate': 'Two-wheeler extra-hour rate',
+            'four_wheeler_base_rate': 'Four-wheeler base rate',
+            'four_wheeler_extra_hour_rate': 'Four-wheeler extra-hour rate',
+        }
+
+        rates = {}
+
+        for field, label in rate_fields.items():
+            try:
+                value = Decimal(request.POST.get(field, '').strip())
+            except (InvalidOperation, ValueError, AttributeError):
+                messages.error(request, f'Enter a valid amount for {label}.')
+                return redirect('manager_facility')
+
+            if not value.is_finite() or value < 0 or value > Decimal('999999.99'):
+                messages.error(
+                    request,
+                    f'{label} must be between Rs 0 and Rs 999999.99.'
+                )
+                return redirect('manager_facility')
+
+            rates[field] = value.quantize(Decimal('0.01'))
+
+        if target:
+            for field, value in rates.items():
+                setattr(target, field, value)
+
+            target.save(update_fields=list(rates.keys()))
+
+        else:
+            target = ParkingLocation.objects.create(
+                manager=request.user,
+                name=name,
+                address=address,
+                city=city,
+                **rates
             )
 
-            return redirect(
-                'manager_facility'
-            )
-
-        name = request.POST.get(
-            'name'
-        )
-
-        address = request.POST.get(
-            'address'
-        )
-
-        city = request.POST.get(
-            'city'
-        )
-
-        ParkingLocation.objects.create(
-            manager=request.user,
-            name=name,
-            address=address,
-            city=city
-        )
-
-        messages.success(
-            request,
-            'Parking facility added successfully!'
-        )
-
-        return redirect(
-            'manager_facility'
-        )
+        messages.success(request, success_message)
+        return redirect('manager_facility')
 
     return render(
         request,
@@ -809,7 +900,6 @@ def manager_facility(request):
             'location': location,
         }
     )
-
 
 # =========================================================
 # MANAGE PARKING SLOTS
@@ -841,25 +931,15 @@ def manager_slots(request):
 
     if request.method == 'POST':
 
-        slot_number = request.POST.get(
-            'slot_number'
-        )
+        slot_number = request.POST.get('slot_number')
 
-        vehicle_type = request.POST.get(
-            'vehicle_type'
-        )
+        vehicle_type = request.POST.get('vehicle_type')
 
-        is_ev = request.POST.get(
-            'is_ev'
-        ) == 'on'
+        is_ev = request.POST.get('is_ev') == 'on'
 
-        charging_available = request.POST.get(
-            'charging_available'
-        ) == 'on'
+        charging_available = request.POST.get('charging_available') == 'on'
 
-        is_extra = request.POST.get(
-            'is_extra'
-        ) == 'on'
+        is_extra = request.POST.get('is_extra') == 'on'
 
         ParkingSlot.objects.create(
             location=location,
@@ -867,7 +947,8 @@ def manager_slots(request):
             vehicle_type=vehicle_type,
             is_ev=is_ev,
             charging_available=charging_available,
-            is_extra=is_extra
+            is_extra=is_extra,
+            
         )
 
         messages.success(
@@ -875,9 +956,7 @@ def manager_slots(request):
             f'Slot {slot_number} added successfully!'
         )
 
-        return redirect(
-            'manager_slots'
-        )
+        return redirect('manager_slots')
 
     return render(
         request,
@@ -1018,8 +1097,20 @@ def manager_bookings(request):
             None
         )
 
+
         booking_obj.payment_obj = payment
 
+        no_show_eligible_time = (
+            booking_obj.expected_arrival
+            + timedelta(minutes=booking_obj.applied_grace_minutes)
+        )
+
+        booking_obj.can_mark_no_show = (
+            booking_obj.status == 'reserved'
+            and not booking_obj.no_show
+            and booking_obj.actual_entry_time is None
+            and no_show_eligible_time <= timezone.now()
+        )
     return render(
         request,
         'parking/manager_bookings.html',
@@ -1031,9 +1122,42 @@ def manager_bookings(request):
 
 
 # =========================================================
+# MANAGER QR CAMERA SCANNER
+# =========================================================
+
+@login_required
+def manager_qr_scanner(request, booking_id):
+    if request.user.role != 'manager':
+        messages.error(request, 'Only parking managers can scan booking QR codes.')
+        return redirect('user_dashboard')
+
+    booking = get_object_or_404(
+        Booking.objects.select_related('location', 'slot', 'user'),
+        id=booking_id
+    )
+
+    assigned_location = ParkingLocation.objects.filter(
+        manager=request.user,
+        id=booking.location_id
+    ).exists()
+
+    if not assigned_location:
+        messages.error(request, 'You are not authorized to scan this booking.')
+        return redirect('manager_bookings')
+
+    return render(
+        request,
+        'parking/manager_qr_scanner.html',
+        {'booking': booking}
+    )
+
+
+# =========================================================
 # MANAGER MARK ENTRY
 # =========================================================
 
+@login_required
+@require_POST
 def manager_mark_entry(request, booking_id):
 
     location = ParkingLocation.objects.filter(
@@ -1128,12 +1252,119 @@ def manager_mark_entry(request, booking_id):
         'manager_bookings'
     )
 
+# =========================================================
+# MANAGER MARK NO-SHOW
+# =========================================================
+
+@login_required
+@require_POST
+def manager_mark_no_show(request, booking_id):
+
+    if request.user.role != 'manager':
+        messages.error(
+            request,
+            'Only parking managers can mark a no-show.'
+        )
+        return redirect('home')
+
+    location = ParkingLocation.objects.filter(
+        manager=request.user
+    ).first()
+
+    if not location:
+        messages.error(
+            request,
+            'Parking facility not found.'
+        )
+        return redirect('manager_facility')
+
+    booking = get_object_or_404(
+        Booking,
+        id=booking_id,
+        location=location
+    )
+
+    if (
+        booking.status != 'reserved'
+        or booking.no_show
+        or booking.actual_entry_time is not None
+    ):
+        messages.error(
+            request,
+            'This booking cannot be marked as a no-show.'
+        )
+        return redirect('manager_bookings')
+
+    no_show_eligible_time = (
+        booking.expected_arrival
+        + timedelta(minutes=booking.applied_grace_minutes)
+    )
+
+    if timezone.now() < no_show_eligible_time:
+        messages.error(
+            request,
+            'Grace period has not ended yet. You cannot mark this booking as a no-show.'
+        )
+        return redirect('manager_bookings')
+
+    booking.no_show = True
+    booking.status = 'expired'
+    booking.save(update_fields=['no_show', 'status'])
+
+    no_show_count = Booking.objects.filter(
+        user=booking.user,
+        no_show=True
+    ).count()
+
+    if no_show_count in (5, 7):
+
+        level = (
+            'warning'
+            if no_show_count == 5
+            else 'final_warning'
+        )
+
+        already_exists = WarningRecord.objects.filter(
+            user=booking.user,
+            location__isnull=True,
+            warning_type='customer_no_show',
+            level=level
+        ).exists()
+
+        if not already_exists:
+            WarningRecord.objects.create(
+                user=booking.user,
+                location=None,
+                warning_type='customer_no_show',
+                level=level,
+                occurrence_count=no_show_count,
+                message=(
+                    'You have reached 5 parking no-shows. '
+                    'Please attend your future reservations.'
+                    if no_show_count == 5
+                    else
+                    'You have reached 7 parking no-shows. '
+                    'This is a final warning and your account '
+                    'requires admin review.'
+                ),
+                requires_admin_review=(no_show_count == 7)
+            )
+
+    messages.success(
+        request,
+        f'Booking #{booking.id} marked as no-show.'
+    )
+
+    return redirect('manager_bookings')
+
 
 # =========================================================
 # MANAGER MARK EXIT
 # =========================================================
 
 
+@login_required
+@require_POST
 def manager_mark_exit(request, booking_id):
     location = ParkingLocation.objects.filter(
         manager=request.user
@@ -1241,12 +1472,12 @@ def manager_mark_exit(request, booking_id):
     # Show the complete payment breakdown to the manager.
     breakdown = (
         f'Actual duration: {actual_duration_display} | '
-        f'Booked charge: ₹{booked_amount} | '
+        f'Booked charge: â‚¹{booked_amount} | '
         f'Extra time: {extra_time_display} | '
-        f'Extra-time charge: ₹{extra_charge} | '
-        f'Final amount: ₹{final_amount} | '
-        f'Advance paid: ₹{advance_amount} | '
-        f'Balance due: ₹{balance_amount}'
+        f'Extra-time charge: â‚¹{extra_charge} | '
+        f'Final amount: â‚¹{final_amount} | '
+        f'Advance paid: â‚¹{advance_amount} | '
+        f'Balance due: â‚¹{balance_amount}'
     )
 
     if balance_amount > Decimal('0.00'):
@@ -1264,24 +1495,62 @@ def manager_mark_exit(request, booking_id):
 
 
 # =========================================================
+# =========================================================
+# MANAGER PROCESS VERIFIED QR SCAN
+# =========================================================
+
+@login_required
+@require_POST
+def manager_process_qr_scan(request, booking_id):
+    if request.user.role != 'manager':
+        messages.error(request, 'Only parking managers can process QR scans.')
+        return redirect('user_dashboard')
+
+    scanned_booking_id = request.POST.get(
+        'scanned_booking_id', ''
+    ).strip()
+
+    if scanned_booking_id != str(booking_id):
+        messages.error(request, 'Scanned booking ID does not match.')
+        return redirect('manager_bookings')
+
+    booking = get_object_or_404(
+        Booking.objects.select_related('location'),
+        id=booking_id
+    )
+
+    assigned_location = ParkingLocation.objects.filter(
+        manager=request.user,
+        id=booking.location_id
+    ).exists()
+
+    if not assigned_location:
+        messages.error(request, 'You are not authorized to process this booking.')
+        return redirect('manager_bookings')
+
+    if booking.status == 'reserved':
+        return manager_mark_entry(request, booking_id)
+
+    if booking.status == 'active':
+        return manager_mark_exit(request, booking_id)
+
+    messages.error(
+        request,
+        'This booking cannot be processed in its current status.'
+    )
+    return redirect('manager_bookings')
+
 # SCAN QR
 # =========================================================
 
 
+@login_required
 def scan_qr(request, booking_id):
-    if not request.user.is_authenticated:
-        messages.error(request, 'Please log in to scan your booking QR code.')
-        return redirect('login')
+    booking = get_object_or_404(
+        Booking.objects.select_related('location', 'user'),
+        id=booking_id
+    )
 
-    try:
-        booking = Booking.objects.select_related(
-            'user', 'slot', 'location'
-        ).get(id=booking_id)
-    except Booking.DoesNotExist:
-        messages.error(request, 'Booking not found.')
-        return redirect('booking_history')
-
-    # Only the booking owner or the assigned parking manager can view the QR.
     is_customer = booking.user_id == request.user.id
     is_manager = ParkingLocation.objects.filter(
         manager=request.user,
@@ -1289,142 +1558,19 @@ def scan_qr(request, booking_id):
     ).exists()
 
     if not is_customer and not is_manager:
-        messages.error(
-            request,
-            'You are not authorized to view this booking.'
-        )
+        messages.error(request, 'You are not authorized to view this booking.')
         return redirect('user_dashboard')
 
-    # Customers can view their booking QR, but cannot record vehicle exit.
-    if is_customer and not is_manager and booking.status == 'active':
-        messages.error(
-            request,
-            'Please ask the parking manager to confirm your vehicle exit.'
-        )
-        return redirect('booking_history')
-
-    payment = getattr(booking, 'payment', None)
-
-    booked_duration_seconds = max(
-        0,
-        (
-            booking.reservation_expiry
-            - booking.expected_arrival
-        ).total_seconds()
-    )
-    booked_duration_display = format_duration(
-        booked_duration_seconds
-    )
-
-    actual_duration_display = None
-    action = None
-
-    # Record entry only once, after advance payment.
-    if booking.status == 'reserved':
-        if not payment or payment.advance_status != 'paid':
-            action = 'payment_required'
-            messages.error(
-                request,
-                'Please complete the advance payment before entry.'
-            )
-        else:
-            booking.actual_entry_time = timezone.now()
-            booking.status = 'active'
-            booking.slot.status = 'occupied'
-
-            booking.save(update_fields=[
-                'actual_entry_time',
-                'status'
-            ])
-            booking.slot.save(update_fields=['status'])
-
-            action = 'entry'
-            messages.success(
-                request,
-                f'Entry recorded for Booking #{booking.id}.'
-            )
-
-    # Record exit once, then show any balance due.
-    elif booking.status == 'active':
-        if not booking.actual_entry_time:
-            action = 'error'
-            messages.error(request, 'Entry time has not been recorded.')
-
-        elif not payment or payment.advance_status != 'paid':
-            action = 'payment_required'
-            messages.error(request, 'Advance payment is not completed.')
-
-        elif booking.actual_exit_time:
-            actual_duration_display = format_duration(
-                (
-                    booking.actual_exit_time
-                    - booking.actual_entry_time
-                ).total_seconds()
-            )
-
-            if payment.balance_status == 'paid':
-                booking.status = 'completed'
-                booking.slot.status = 'available'
-                booking.save(update_fields=['status'])
-                booking.slot.save(update_fields=['status'])
-                action = 'completed'
-            else:
-                action = 'balance_pending'
-
-        else:
-            try:
-                actual_duration_display = calculate_exit_balance(
-                    booking, payment
-                )
-            except ValueError as error:
-                action = 'error'
-                messages.error(request, str(error))
-            else:
-                booking.refresh_from_db()
-                payment.refresh_from_db()
-
-                if payment.balance_status == 'paid':
-                    action = 'completed'
-                    messages.success(
-                        request,
-                        f'Exit recorded. Final amount: ₹{payment.final_amount}.'
-                    )
-                else:
-                    action = 'balance_pending'
-                    messages.warning(
-                        request,
-                        f'Exit recorded. Balance due: ₹{payment.balance_amount}.'
-                    )
-
-    elif booking.status == 'completed':
-        if booking.actual_entry_time and booking.actual_exit_time:
-            actual_duration_display = format_duration(
-                (
-                    booking.actual_exit_time
-                    - booking.actual_entry_time
-                ).total_seconds()
-            )
-        action = 'completed'
-
-    else:
-        action = 'invalid'
-
-    return render(
+    messages.info(
         request,
-        'parking/qr_scan_result.html',
-        {
-            'booking': booking,
-            'payment': payment,
-            'booked_duration_display': booked_duration_display,
-            'actual_duration_display': actual_duration_display,
-            'action': action,
-            'is_customer': is_customer,
-        }
+        'Please use the ParkGrid manager camera scanner to process this booking QR.'
     )
 
+    if is_manager:
+        return redirect('manager_bookings')
 
+    return redirect('booking_history')
 
-# =========================================================
 # MANAGER COMPLAINTS
 # =========================================================
 
@@ -1465,8 +1611,179 @@ def manager_complaints(request):
 
 
 # =========================================================
-# ADMIN SECTION
+# MANAGER VERIFY COMPLAINT
 # =========================================================
+
+@login_required
+@require_POST
+def manager_verify_complaint(request, complaint_id):
+
+    if request.user.role != 'manager':
+        messages.error(
+            request,
+            'Only parking managers can verify complaints.'
+        )
+        return redirect('home')
+
+    location = ParkingLocation.objects.filter(
+        manager=request.user
+    ).first()
+
+    if not location:
+        messages.error(
+            request,
+            'No parking facility is assigned to your account.'
+        )
+        return redirect('manager_facility')
+
+    complaint = get_object_or_404(
+        Complaint,
+        id=complaint_id,
+        location=location
+    )
+
+
+    if not complaint.is_valid:
+        complaint.is_valid = True
+        complaint.verified_at = timezone.now()
+        complaint.save(
+            update_fields=['is_valid', 'verified_at']
+        )
+
+        valid_count = Complaint.objects.filter(
+            location=location,
+            is_valid=True
+        ).count()
+
+        if valid_count in (5, 7):
+            level = (
+                'warning'
+                if valid_count == 5
+                else 'final_warning'
+            )
+
+            already_exists = WarningRecord.objects.filter(
+                user=location.manager,
+                location=location,
+                warning_type='manager_complaints',
+                level=level
+            ).exists()
+
+            if not already_exists:
+                WarningRecord.objects.create(
+                    user=location.manager,
+                    location=location,
+                    warning_type='manager_complaints',
+                    level=level,
+                    occurrence_count=valid_count,
+                    message=(
+                        'Your parking facility has received '
+                        '5 valid complaints. Please review '
+                        'the issues and improve your service.'
+                        if valid_count == 5
+                        else
+                        'Your parking facility has received '
+                        '7 valid complaints. This is a final '
+                        'warning and requires admin review.'
+                    ),
+                    requires_admin_review=(valid_count == 7)
+                )
+
+        messages.success(
+            request,
+            'Complaint marked as valid.'
+        )
+
+    else:
+        messages.info(
+            request,
+            'This complaint is already verified.'
+        )
+
+    return redirect('manager_complaints')
+
+# =========================================================
+# ADMIN WARNING REVIEW
+# =========================================================
+
+@login_required
+@require_POST
+def admin_review_warning(request, warning_id):
+
+    if request.user.role != 'admin':
+        messages.error(
+            request,
+            'You are not authorized to review warnings.'
+        )
+        return redirect('home')
+
+    warning = get_object_or_404(
+        WarningRecord,
+        id=warning_id,
+        requires_admin_review=True
+    )
+
+    decision = request.POST.get(
+        'admin_decision',
+        ''
+    ).strip()
+
+    reason = request.POST.get(
+        'admin_review_reason',
+        ''
+    ).strip()
+
+    action_status = request.POST.get(
+        'admin_action_status',
+        ''
+    ).strip()
+
+    valid_decisions = dict(
+        WarningRecord.ADMIN_DECISION_CHOICES
+    )
+
+    if decision not in valid_decisions:
+        messages.error(request, 'Please select a valid decision.')
+        return redirect('admin_dashboard')
+
+    if not reason:
+        messages.error(request, 'Please enter the review reason.')
+        return redirect('admin_dashboard')
+
+    if decision == 'further_action':
+        if action_status not in dict(
+            WarningRecord.ADMIN_ACTION_STATUS_CHOICES
+        ):
+            messages.error(
+                request,
+                'Please select the action status.'
+            )
+            return redirect('admin_dashboard')
+    else:
+        action_status = ''
+
+    warning.admin_decision = decision
+    warning.admin_review_reason = reason
+    warning.admin_action_status = action_status
+    warning.admin_reviewed_at = timezone.now()
+    warning.requires_admin_review = False
+
+    warning.save(
+        update_fields=[
+            'admin_decision',
+            'admin_review_reason',
+            'admin_action_status',
+            'admin_reviewed_at',
+            'requires_admin_review',
+        ]
+    )
+
+    messages.success(
+        request,
+        'Warning review decision saved successfully.'
+    )
+
+    return redirect('admin_dashboard')
 
 
 # =========================================================
@@ -1495,6 +1812,9 @@ def admin_dashboard(request):
     ).count()
 
     total_complaints = Complaint.objects.count()
+    pending_warning_reviews = WarningRecord.objects.filter(
+    requires_admin_review=True
+    ).order_by('-created_at')
 
     context = {
         'total_users': total_users,
@@ -1503,6 +1823,7 @@ def admin_dashboard(request):
         'total_slots': total_slots,
         'active_bookings': active_bookings,
         'total_complaints': total_complaints,
+        'pending_warning_reviews': pending_warning_reviews,
     }
 
     return render(
@@ -1854,6 +2175,8 @@ def admin_complaints(request):
     )
 
 
+
+
 # =========================================================
 # ADMIN REPORTS
 # =========================================================
@@ -2002,16 +2325,17 @@ def booking(request):
         )
 
     try:
+        duration = int(duration_value)
 
-        duration = int(
-            duration_value
-        )
+        allowed_durations = {
+            30, 60, 1800, 3600, 5400, 7200,
+            9000, 10800, 12600, 14400, 16200, 18000
+        }
 
-    except (
-        ValueError,
-        TypeError
-    ):
+        if duration not in allowed_durations:
+            duration = None
 
+    except (ValueError, TypeError):
         duration = None
 
     if (
@@ -2043,7 +2367,7 @@ def booking(request):
 
         reservation_expiry = (
             expected_arrival +
-            timedelta(hours=duration)
+            timedelta(seconds=duration)
         )
 
     except (
@@ -2103,7 +2427,6 @@ def booking(request):
                 'parking_layout',
                 location_id=slot.location.id
             )
-
         booking_obj = Booking.objects.create(
             user=request.user,
             location=slot.location,
@@ -2113,6 +2436,7 @@ def booking(request):
             booking_date=expected_arrival.date(),
             expected_arrival=expected_arrival,
             reservation_expiry=reservation_expiry,
+            applied_grace_minutes=slot.location.grace_period_minutes,
             qr_code=str(uuid.uuid4()),
             status='reserved'
         )
@@ -2448,7 +2772,7 @@ def balance_payment(request, booking_id):
 
     messages.success(
         request,
-        f'Balance payment of ₹{balance_paid} completed successfully.'
+        f'Balance payment of â‚¹{balance_paid} completed successfully.'
     )
 
     return redirect('booking_history')
@@ -2543,21 +2867,26 @@ def qr_code(request, booking_id):
             'location',
             'slot',
             'user'
-        ).get(
-            id=booking_id,
-            user=request.user
-        )
+        ).get(id=booking_id)
 
     except Booking.DoesNotExist:
 
-        messages.error(
-            request,
-            'Booking not found.'
-        )
+        messages.error(request, 'Booking not found.')
+        return redirect('manager_bookings' if request.user.role == 'manager' else 'booking_history')
 
-        return redirect(
-            'booking_history'
-        )
+    is_customer = booking.user_id == request.user.id
+    is_manager = (
+        request.user.role == 'manager' and
+        ParkingLocation.objects.filter(
+            manager=request.user,
+            id=booking.location_id
+        ).exists()
+    )
+
+    if not is_customer and not is_manager:
+        messages.error(request, 'You are not authorized to view this QR code.')
+        return redirect('manager_bookings' if request.user.role == 'manager' else 'booking_history')
+
 
     # -----------------------------------------------------
     # CHECK ADVANCE PAYMENT
@@ -2921,3 +3250,66 @@ def complaint_status(request):
             'complaints': complaints
         }
     )
+
+def nearby_pay_park(request):
+    return render(
+        request,
+        'parking/nearby_pay_park.html'
+    )
+
+
+def nearby_parking_data(request):
+    lat = request.GET.get("lat")
+    lon = request.GET.get("lon")
+
+    try:
+        lat = float(lat)
+        lon = float(lon)
+
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise ValueError("Invalid coordinates")
+
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"error": "Valid latitude and longitude are required."},
+            status=400
+        )
+
+    query = f"""
+        [out:json][timeout:25];
+        (
+            nwr(around:5000,{lat},{lon})["amenity"="parking"];
+        );
+        out center tags;
+    """
+
+    try:
+        response = requests.post(
+            "https://overpass-api.de/api/interpreter",
+            data={"data": query},
+            timeout=35
+        )
+        response.raise_for_status()
+
+        return JsonResponse(response.json())
+
+    except requests.RequestException as e:
+        print("OVERPASS API ERROR:", repr(e))
+        return JsonResponse(
+            {"error": "Parking data service is temporarily unavailable."},
+            status=502
+        )
+
+    except ValueError:
+        return JsonResponse(
+            {"error": "Invalid response from parking data service."},
+            status=502
+        )
+
+
+
+
+
+
+
+

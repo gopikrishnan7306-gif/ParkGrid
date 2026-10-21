@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkGrid | Scan Booking QR</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+        .container {
+            max-width: 650px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.08);
+        }
+        h1 { color: #1e5eff; margin-top: 0; }
+        .subtitle { color: #666; line-height: 1.6; }
+        .booking {
+            background: #f0f4ff;
+            padding: 14px;
+            border-radius: 9px;
+            margin: 18px 0;
+        }
+        #reader { width: 100%; margin: 18px auto; }
+        #status {
+            padding: 12px;
+            border-radius: 8px;
+            background: #f0f4ff;
+            overflow-wrap: anywhere;
+        }
+        .btn {
+            display: inline-block;
+            border: 0;
+            text-decoration: none;
+            background: #1e5eff;
+            color: white;
+            padding: 11px 17px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            .container { margin: 10px auto; padding: 12px; }
+            .card { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <section class="card">
+            <h1>Scan Booking QR</h1>
+            <p class="subtitle">
+                Allow camera access and scan the customer's booking QR code.
+                Scanning alone will not change the booking status.
+            </p>
+
+            <div class="booking">
+                <strong>Expected booking:</strong> #{{ booking.id }}<br>
+                <strong>Customer:</strong> {{ booking.user }}<br>
+                <strong>Facility:</strong> {{ booking.location.name }}<br>
+                <strong>Status:</strong> {{ booking.status|title }}
+            </div>
+
+            <form id="scanForm" method="post"
+                  action="{% url 'manager_process_qr_scan' booking.id %}"
+                  style="display:none;">
+                {% csrf_token %}
+                <input type="hidden" name="scanned_booking_id"
+                       id="scanned_booking_id">
+            </form>
+
+            <div id="reader"></div>
+            <p id="status" role="status">Starting camera scanner...</p>
+
+            <a class="btn" href="{% url 'manager_bookings' %}">Back to Bookings</a>
+        </section>
+    </main>
+
+    <script>
+        const expectedBookingId = "{{ booking.id|escapejs }}";
+        const statusBox = document.getElementById("status");
+        let scanner;
+        let scanSubmitted = false;
+
+        function handleScan(decodedText) {
+            if (scanSubmitted) return;
+            let scannedId = null;
+
+            try {
+                const scannedUrl = new URL(decodedText);
+                const match = scannedUrl.pathname.match(/\/scan-qr\/(\d+)\/?/);
+                if (match) scannedId = match[1];
+            } catch (error) {
+                const match = decodedText.match(/\/scan-qr\/(\d+)\/?/);
+                if (match) scannedId = match[1];
+            }
+
+            if (!scannedId) {
+                statusBox.textContent =
+                    "This QR code does not contain a valid ParkGrid booking link.";
+                return;
+            }
+
+            if (scannedId !== expectedBookingId) {
+                statusBox.textContent =
+                    "Booking mismatch. Expected booking #" + expectedBookingId +
+                    ", but scanned booking #" + scannedId + ".";
+                return;
+            }
+
+            scanSubmitted = true;
+
+            statusBox.textContent =
+                "QR verified. Processing booking #" + scannedId + "...";
+
+            document.getElementById("scanned_booking_id").value = scannedId;
+
+            if (scanner) {
+                scanner.clear().then(() => {
+                    document.getElementById("scanForm").submit();
+                }).catch(() => {
+                    document.getElementById("scanForm").submit();
+                });
+            } else {
+                document.getElementById("scanForm").submit();
+            }
+        }
+
+        function startScanner() {
+            if (typeof Html5Qrcode === "undefined") {
+                statusBox.textContent =
+                    "Scanner library could not load. Check your internet connection and reload.";
+                return;
+            }
+
+            scanner = new Html5Qrcode("reader");
+            scanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 240, height: 240 } },
+                handleScan,
+                () => {}
+            ).then(() => {
+                statusBox.textContent = "Camera ready. Point it at the customer's QR code.";
+            }).catch((error) => {
+                statusBox.textContent = "Camera error: " + JSON.stringify(error);
+            });
+        }
+
+        startScanner();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

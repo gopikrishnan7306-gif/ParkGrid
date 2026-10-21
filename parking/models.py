@@ -62,6 +62,8 @@ class ParkingLocation(models.Model):
     city = models.CharField(max_length=100)
 
     status = models.BooleanField(default=True)
+    # Manager-configured grace period before marking a no-show
+    grace_period_minutes = models.PositiveIntegerField(default=30)
 
     # Two-wheeler parking rates
     two_wheeler_base_rate = models.DecimalField(
@@ -207,6 +209,21 @@ class Booking(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='reserved'
+    )
+        # Grace period captured when the booking is created
+    applied_grace_minutes = models.PositiveIntegerField(
+        default=0
+    )
+
+    expiry_reminder_sent = models.BooleanField(
+        default=False
+    )
+
+    no_show_processed = models.BooleanField(
+        default=False
+    )
+    no_show = models.BooleanField(
+        default=False
     )
 
     created_at = models.DateTimeField(
@@ -370,6 +387,14 @@ class Complaint(models.Model):
         choices=STATUS_CHOICES,
         default='pending'
     )
+    is_valid = models.BooleanField(
+        default=False
+    )
+
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     response = models.TextField(
         blank=True
@@ -381,3 +406,105 @@ class Complaint(models.Model):
 
     def __str__(self):
         return self.subject
+
+    
+# ---------------------------------------------------------
+# WARNING RECORD
+# ---------------------------------------------------------
+
+class WarningRecord(models.Model):
+
+    WARNING_TYPE_CHOICES = (
+        ('customer_no_show', 'Customer No-Show'),
+        ('manager_complaints', 'Manager Complaints'),
+    )
+
+    LEVEL_CHOICES = (
+        ('warning', 'Warning'),
+        ('final_warning', 'Final Warning'),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='warning_records'
+    )
+
+    location = models.ForeignKey(
+        ParkingLocation,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='warning_records'
+    )
+
+    warning_type = models.CharField(
+        max_length=30,
+        choices=WARNING_TYPE_CHOICES
+    )
+
+    level = models.CharField(
+        max_length=20,
+        choices=LEVEL_CHOICES
+    )
+
+    occurrence_count = models.PositiveIntegerField()
+
+    message = models.TextField()
+
+    requires_admin_review = models.BooleanField(
+        default=False
+    )
+    ADMIN_DECISION_CHOICES = (
+        ('warning_upheld', 'Warning Upheld'),
+        ('warning_dismissed', 'Warning Dismissed'),
+        ('further_action', 'Further Action Required'),
+    )
+
+    admin_decision = models.CharField(
+        max_length=30,
+        choices=ADMIN_DECISION_CHOICES,
+        blank=True,
+        default=''
+    )
+
+    admin_review_reason = models.TextField(
+        blank=True,
+        default=''
+    )
+
+    admin_reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    ADMIN_ACTION_STATUS_CHOICES = (
+        ('pending', 'Action Pending'),
+        ('completed', 'Action Completed'),
+    )
+
+    admin_action_status = models.CharField(
+        max_length=20,
+        choices=ADMIN_ACTION_STATUS_CHOICES,
+        blank=True,
+        default=''
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'user',
+                    'location',
+                    'warning_type',
+                    'level'
+                ],
+                name='unique_warning_per_user_location_type_level'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.get_level_display()} - {self.user.username}"
