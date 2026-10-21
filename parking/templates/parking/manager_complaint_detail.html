@@ -1,0 +1,725 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Complaint Details | ParkGrid</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy: #173b70;
+            --blue: #1769aa;
+            --blue-hover: #10558c;
+            --background: #f5f7fb;
+            --white: #ffffff;
+            --text: #222;
+            --muted: #667085;
+            --border: #e5eaf2;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 25px 28px 35px;
+        }
+
+        /* Page header */
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            min-width: 0;
+        }
+
+        .title-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: #e7efff;
+            color: var(--navy);
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--navy);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+        }
+
+        .page-subtitle {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            background: var(--blue);
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .button:hover {
+            background: var(--blue-hover);
+        }
+
+        .back-button {
+            background: var(--white);
+            color: var(--navy);
+            border-color: #d8e1ee;
+            white-space: nowrap;
+        }
+
+        .back-button:hover {
+            background: #edf3ff;
+            border-color: #c3d3ed;
+        }
+
+        /* Messages */
+
+        .message {
+            padding: 11px 14px;
+            margin-bottom: 16px;
+            border-radius: 7px;
+            background: #e7f6eb;
+            border: 1px solid #c9ead2;
+            color: #216738;
+            font-size: 13px;
+        }
+
+        /* Main layout */
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.85fr);
+            align-items: start;
+            gap: 20px;
+        }
+
+        .left-column,
+        .right-column {
+            min-width: 0;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid #e7ebf2;
+            border-radius: 11px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px rgba(23, 59, 112, 0.04);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 17px 19px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-icon {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: #edf3ff;
+            color: var(--navy);
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            color: var(--navy);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .panel-description {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .panel-body {
+            padding: 18px 20px;
+        }
+
+        /* Complaint reference */
+
+        .complaint-reference {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 0 0 15px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reference-label {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .reference-number {
+            color: var(--navy);
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .reference-date {
+            color: var(--muted);
+            font-size: 12px;
+            text-align: right;
+        }
+
+        /* Details grid */
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 24px;
+        }
+
+        .detail {
+            min-width: 0;
+            padding: 13px 0;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .detail.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.45px;
+        }
+
+        .detail-value {
+            margin: 0;
+            color: #27364b;
+            font-size: 13px;
+            line-height: 1.65;
+            overflow-wrap: anywhere;
+        }
+
+        .description-box {
+            padding: 12px 13px;
+            background: #f8faff;
+            border: 1px solid #edf1f8;
+            border-radius: 7px;
+        }
+
+        .booking-reference {
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        /* Status badges */
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #fff4d6;
+            color: #946200;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            flex-shrink: 0;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        .status-progress {
+            background: #e8eefc;
+            color: #3456a3;
+        }
+
+        .status-resolved {
+            background: #e7f8ed;
+            color: #218047;
+        }
+
+        .verified,
+        .not-verified {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .verified {
+            background: #e7f8ed;
+            color: #218047;
+        }
+
+        .not-verified {
+            background: #fff4d6;
+            color: #946200;
+        }
+
+        /* Previous reply */
+
+        .response-box {
+            padding: 12px 14px;
+            background: #f5f8fd;
+            border-left: 3px solid var(--blue);
+            border-radius: 0 7px 7px 0;
+        }
+
+        .response-box p {
+            margin: 0;
+            color: #344054;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .empty-response {
+            color: var(--muted) !important;
+            font-style: italic;
+        }
+
+        /* Reply form */
+
+        .form-intro {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 17px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: #344054;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        select,
+        textarea {
+            display: block;
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d5dce8;
+            border-radius: 7px;
+            background: #fff;
+            color: #27364b;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select:focus,
+        textarea:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(23, 105, 170, 0.1);
+        }
+
+        textarea {
+            min-height: 125px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        textarea::placeholder {
+            color: #98a2b3;
+        }
+
+        .field-help {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .save-button {
+            width: 100%;
+            padding: 12px 15px;
+            margin-top: 3px;
+        }
+
+        .form-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 10px 11px;
+            border-radius: 7px;
+            background: #f3f6fc;
+            color: #53647c;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* Responsive layout */
+
+        @media (max-width: 850px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .container {
+                max-width: 720px;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .container {
+                padding: 18px 12px 28px;
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .back-button {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 21px;
+            }
+
+            .title-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 19px;
+            }
+
+            .panel-header {
+                padding: 14px;
+            }
+
+            .panel-body {
+                padding: 14px;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail.full-width {
+                grid-column: auto;
+            }
+
+            .complaint-reference {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .reference-date {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <header class="page-header">
+            <div class="page-title">
+                <div class="title-icon">!</div>
+                <div>
+                    <h1>Complaint Details</h1>
+                    <p class="page-subtitle">
+                        Review complaint information and manage your response.
+                    </p>
+                </div>
+            </div>
+
+            <a href="{% url 'manager_complaints' %}"
+               class="button back-button">
+                ← Back to Complaints
+            </a>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="content-grid">
+
+            <main class="left-column">
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <div class="panel-icon">▤</div>
+                        <div>
+                            <h2>Complaint Information</h2>
+                            <p class="panel-description">
+                                Details submitted by the user
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <div class="complaint-reference">
+                            <div>
+                                <span class="reference-label">Complaint Reference</span>
+                                <span class="reference-number">#{{ complaint.id }}</span>
+                            </div>
+
+                            <div class="reference-date">
+                                <span class="reference-label">Submitted On</span>
+                                {{ complaint.created_at|date:"d M Y, h:i A" }}
+                            </div>
+                        </div>
+
+                        <div class="details-grid">
+
+                            <div class="detail">
+                                <span class="detail-label">User</span>
+                                <p class="detail-value">{{ complaint.user }}</p>
+                            </div>
+
+                            <div class="detail">
+                                <span class="detail-label">Booking Reference</span>
+                                <p class="detail-value">
+                                    {% if complaint.booking %}
+                                        <span class="booking-reference">
+                                            #{{ complaint.booking.id }}
+                                        </span>
+                                    {% else %}
+                                        Not linked to a booking
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="detail full-width">
+                                <span class="detail-label">Subject</span>
+                                <p class="detail-value">
+                                    <strong>{{ complaint.subject }}</strong>
+                                </p>
+                            </div>
+
+                            <div class="detail full-width">
+                                <span class="detail-label">Description</span>
+                                <div class="description-box">
+                                    <p class="detail-value">
+                                        {{ complaint.description|linebreaksbr }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="detail">
+                                <span class="detail-label">Current Status</span>
+                                <p class="detail-value">
+                                    <span class="status
+                                        {% if complaint.status == 'resolved' %}status-resolved
+                                        {% elif complaint.status == 'in_progress' %}status-progress
+                                        {% endif %}">
+                                        {{ complaint.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+
+                            <div class="detail">
+                                <span class="detail-label">Verification</span>
+                                <p class="detail-value">
+                                    {% if complaint.is_valid %}
+                                        <span class="verified">
+                                            ✓ Marked as Valid
+                                        </span>
+                                    {% else %}
+                                        <span class="not-verified">
+                                            ! Not Yet Verified
+                                        </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="detail full-width">
+                                <span class="detail-label">
+                                    Previous Manager Response
+                                </span>
+
+                                <div class="response-box">
+                                    {% if complaint.response %}
+                                        <p>
+                                            {{ complaint.response|linebreaksbr }}
+                                        </p>
+                                    {% else %}
+                                        <p class="empty-response">
+                                            No response has been added yet.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <aside class="right-column">
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <div class="panel-icon">✎</div>
+                        <div>
+                            <h2>Respond to Complaint</h2>
+                            <p class="panel-description">
+                                Reply and update the status
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+                        <p class="form-intro">
+                            Enter a clear response for the user and select
+                            the appropriate complaint status.
+                        </p>
+
+                        <form method="POST">
+                            {% csrf_token %}
+
+                            <div class="form-group">
+                                <label for="response">Manager Reply</label>
+
+                                <textarea
+                                    id="response"
+                                    name="response"
+                                    placeholder="Enter your response to the user..."
+                                    required>{{ complaint.response }}</textarea>
+
+                                <p class="field-help">
+                                    Explain the action taken or the next steps.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="status">Update Status</label>
+
+                                <select id="status" name="status" required>
+                                    <option value="pending"
+                                        {% if complaint.status == 'pending' %}selected{% endif %}>
+                                        Pending
+                                    </option>
+
+                                    <option value="in_progress"
+                                        {% if complaint.status == 'in_progress' %}selected{% endif %}>
+                                        In Progress
+                                    </option>
+
+                                    <option value="resolved"
+                                        {% if complaint.status == 'resolved' %}selected{% endif %}>
+                                        Resolved
+                                    </option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="button save-button">
+                                ✓ Save Reply and Status
+                            </button>
+
+                            <div class="form-note">
+                                <span>ⓘ</span>
+                                <span>
+                                    Your reply and selected status will be saved
+                                    to this complaint.
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+            </aside>
+
+        </div>
+    </div>
+</body>
+</html>
