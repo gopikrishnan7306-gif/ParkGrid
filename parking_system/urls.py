@@ -299,10 +299,15 @@ path(
         name='manager_complaints'
     ),
     path(
+    'manager/complaints/<int:complaint_id>/view/',
+    views.manager_complaint_detail,
+    name='manager_complaint_detail'
+    ),
+    path(
     'manager/complaints/<int:complaint_id>/verify/',
     views.manager_verify_complaint,
     name='manager_verify_complaint'
-),
+    ),
 
 path(
     'manager/booking/<int:booking_id>/no-show/',

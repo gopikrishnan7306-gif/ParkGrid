@@ -1611,6 +1611,101 @@ def manager_complaints(request):
 
 
 # =========================================================
+# MANAGER VIEW AND RESPOND TO COMPLAINT
+# =========================================================
+
+@login_required
+def manager_complaint_detail(request, complaint_id):
+
+    if request.user.role != 'manager':
+        messages.error(
+            request,
+            'Only parking managers can access complaints.'
+        )
+        return redirect('home')
+
+    location = ParkingLocation.objects.filter(
+        manager=request.user
+    ).first()
+
+    if not location:
+        messages.error(
+            request,
+            'No parking facility is assigned to your account.'
+        )
+        return redirect('manager_facility')
+
+    complaint = get_object_or_404(
+        Complaint.objects.select_related(
+            'user',
+            'booking',
+            'location'
+        ),
+        id=complaint_id,
+        location=location
+    )
+
+    if request.method == 'POST':
+
+        response = request.POST.get(
+            'response',
+            ''
+        ).strip()
+
+        status = request.POST.get(
+            'status',
+            ''
+        ).strip()
+
+        valid_statuses = {
+            'pending',
+            'in_progress',
+            'resolved'
+        }
+
+        if not response:
+            messages.error(
+                request,
+                'Please enter a response.'
+            )
+
+        elif status not in valid_statuses:
+            messages.error(
+                request,
+                'Please select a valid complaint status.'
+            )
+
+        else:
+            complaint.response = response
+            complaint.status = status
+
+            complaint.save(
+                update_fields=[
+                    'response',
+                    'status'
+                ]
+            )
+
+            messages.success(
+                request,
+                'Your response has been saved successfully.'
+            )
+
+            return redirect(
+                'manager_complaint_detail',
+                complaint_id=complaint.id
+            )
+
+    return render(
+        request,
+        'parking/manager_complaint_detail.html',
+        {
+            'location': location,
+            'complaint': complaint
+        }
+    )
+
+# =========================================================
 # MANAGER VERIFY COMPLAINT
 # =========================================================
 
