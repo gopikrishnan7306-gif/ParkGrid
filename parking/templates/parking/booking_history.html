@@ -859,6 +859,14 @@
                                                 </span>
                                             {% endif %}
 
+                                            {% if booking.actual_exit_time and booking.payment_obj.balance_status != 'paid' and booking.payment_obj.balance_amount and booking.payment_obj.balance_amount > 0 %}
+                                                <a href="{% url 'balance_payment' booking.id %}"
+                                                   class="action-button"
+                                                   style="display:inline-block;margin-top:8px;text-decoration:none;">
+                                                    Pay Balance
+                                                </a>
+                                            {% endif %}
+
                                         {% else %}
 
                                             <span class="payment-sub">

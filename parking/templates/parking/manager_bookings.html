@@ -1,5 +1,4 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -152,10 +151,6 @@
             white-space: nowrap;
         }
 
-        .exit-btn {
-            background: #16833a;
-        }
-
         .qr-btn {
             background: #6546c7;
         }
@@ -195,17 +190,17 @@
 
     <div class="header">
         <div>
-            <h1>📅 Bookings</h1>
+            <h1>Bookings</h1>
 
             {% if location %}
                 <div class="subtitle">
-                    {{ location.name }} — {{ location.city }}
+                    {{ location.name }} - {{ location.city }}
                 </div>
             {% endif %}
         </div>
 
         <a href="{% url 'manager_dashboard' %}" class="back-btn">
-            ← Dashboard
+            &larr; Dashboard
         </a>
     </div>
 
@@ -259,7 +254,7 @@
                             </td>
 
                             <td>
-                                {% widthratio booking.reservation_expiry|timeuntil:booking.expected_arrival 1 1 %}
+                                {{ booking.reservation_expiry|timeuntil:booking.expected_arrival }}
                             </td>
 
                             <td>
@@ -289,30 +284,19 @@
                             <td>
                                 {% if booking.status == 'reserved' %}
 
-                                    <a
-                                        href="{% url 'manager_qr_scanner' booking.id %}"
-                                        class="action-btn qr-btn"
-                                    >
-                                        Scan QR
-                                    </a>
-
                                     {% if booking.payment and booking.payment.advance_status == 'paid' %}
-                                        <form
-                                            method="post"
-                                            action="{% url 'manager_mark_entry' booking.id %}"
-                                            class="action-form"
+                                        <a
+                                            href="{% url 'manager_qr_scanner' booking.id %}"
+                                            class="action-btn qr-btn"
                                         >
-                                            {% csrf_token %}
-                                            <button type="submit" class="action-btn">
-                                                Mark Entry
-                                            </button>
-                                        </form>
+                                            Scan QR
+                                        </a>
                                     {% else %}
-                                        <div class="action-text">
+                                        <span class="action-text">
                                             Awaiting advance payment
-                                        </div>
+                                        </span>
                                     {% endif %}
-                                    
+
                                     {% if booking.can_mark_no_show %}
                                         <form
                                             method="post"
@@ -326,21 +310,16 @@
                                         </form>
                                     {% endif %}
 
-
                                 {% elif booking.status == 'active' %}
 
                                     {% if not booking.actual_exit_time %}
-                                        <form
-                                            method="post"
-                                            action="{% url 'manager_mark_exit' booking.id %}"
-                                            class="action-form"
+                                        <a
+                                            href="{% url 'manager_qr_scanner' booking.id %}"
+                                            class="action-btn qr-btn"
                                         >
-                                            {% csrf_token %}
-                                            <button type="submit" class="action-btn exit-btn">
-                                                Mark Exit
-                                            </button>
-                                        </form>
-                                    {% elif booking.payment and booking.payment.balance_amount > 0 %}
+                                            Scan QR
+                                        </a>
+                                    {% elif booking.payment and booking.payment.balance_status != 'paid' and booking.payment.balance_amount > 0 %}
                                         <span class="payment-pending">
                                             Balance ₹{{ booking.payment.balance_amount }} pending
                                         </span>
@@ -355,6 +334,13 @@
                                     <span class="payment-paid">
                                         Completed
                                     </span>
+
+                                    {% if booking.payment and booking.payment.balance_status != 'paid' and booking.payment.balance_amount > 0 %}
+                                        <br>
+                                        <span class="payment-pending">
+                                            Balance ₹{{ booking.payment.balance_amount }} pending
+                                        </span>
+                                    {% endif %}
 
                                 {% elif booking.status == 'expired' %}
 
@@ -391,4 +377,3 @@
 </div>
 </body>
 </html>
-

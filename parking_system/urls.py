@@ -251,6 +251,11 @@ path(
         views.reject_manager,
         name='reject_manager'
     ),
+    path(
+    'parkgrid-admin/managers/<int:user_id>/deactivate/',
+    views.deactivate_manager,
+    name='deactivate_manager'
+),
 
 
     # =====================================================

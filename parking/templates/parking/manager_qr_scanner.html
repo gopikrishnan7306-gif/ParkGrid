@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -93,7 +93,7 @@
         let scanner;
         let scanSubmitted = false;
 
-        function handleScan(decodedText) {
+        function handleScan(decodedText) { statusBox.textContent = "QR detected: " + decodedText;
             if (scanSubmitted) return;
             let scannedId = null;
 
@@ -126,15 +126,8 @@
 
             document.getElementById("scanned_booking_id").value = scannedId;
 
-            if (scanner) {
-                scanner.clear().then(() => {
-                    document.getElementById("scanForm").submit();
-                }).catch(() => {
-                    document.getElementById("scanForm").submit();
-                });
-            } else {
-                document.getElementById("scanForm").submit();
-            }
+            const scanForm = document.getElementById("scanForm");
+            scanForm.requestSubmit();
         }
 
         function startScanner() {
@@ -144,12 +137,12 @@
                 return;
             }
 
-            scanner = new Html5Qrcode("reader");
+            scanner = new Html5Qrcode("reader", { verbose: true });
             scanner.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 240, height: 240 } },
+                { fps: 15, qrbox: { width: 300, height: 300 }, aspectRatio: 1.0 },
                 handleScan,
-                () => {}
+                (errorMessage) => { if (errorMessage && !errorMessage.includes("NotFoundException")) { statusBox.textContent = "Scanning... " + errorMessage; } }
             ).then(() => {
                 statusBox.textContent = "Camera ready. Point it at the customer's QR code.";
             }).catch((error) => {
@@ -161,13 +154,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

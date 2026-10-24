@@ -213,13 +213,9 @@ def calculate_exit_balance(booking, payment):
         'balance_status',
     ])
 
-    # Release the slot only if no balance remains.
-    if balance_amount == Decimal('0.00'):
-        booking.status = 'completed'
-        booking.slot.status = 'available'
-    else:
-        booking.status = 'active'
-        booking.slot.status = 'occupied'
+    # Complete parking and release the slot when the vehicle exits.
+    booking.status = 'completed'
+    booking.slot.status = 'available'
 
     booking.slot.save(update_fields=['status'])
 
@@ -948,7 +944,7 @@ def manager_slots(request):
             is_ev=is_ev,
             charging_available=charging_available,
             is_extra=is_extra,
-            
+
         )
 
         messages.success(
@@ -1472,23 +1468,23 @@ def manager_mark_exit(request, booking_id):
     # Show the complete payment breakdown to the manager.
     breakdown = (
         f'Actual duration: {actual_duration_display} | '
-        f'Booked charge: â‚¹{booked_amount} | '
+        f'Booked charge: Rs.{booked_amount} | '
         f'Extra time: {extra_time_display} | '
-        f'Extra-time charge: â‚¹{extra_charge} | '
-        f'Final amount: â‚¹{final_amount} | '
-        f'Advance paid: â‚¹{advance_amount} | '
-        f'Balance due: â‚¹{balance_amount}'
+        f'Extra-time charge: Rs.{extra_charge} | '
+        f'Final amount: Rs.{final_amount} | '
+        f'Advance paid: Rs.{advance_amount} | '
+        f'Balance due: Rs.{balance_amount}'
     )
 
     if balance_amount > Decimal('0.00'):
         messages.warning(
             request,
-            f'Exit recorded. {breakdown}'
+            f'Parking exit recorded successfully. Balance pending: Rs. {balance_amount}. {breakdown}'
         )
     else:
         messages.success(
             request,
-            f'Parking completed. {breakdown}'
+            f'Parking completed successfully. {breakdown}'
         )
 
     return redirect('manager_bookings')
@@ -1934,11 +1930,13 @@ def admin_dashboard(request):
 
 def admin_users(request):
 
+
     users = User.objects.filter(
-        role='user'
-    ).order_by(
-        '-date_joined'
-    )
+    role='user'
+).order_by(
+    '-date_joined'
+)
+
 
     search = request.GET.get(
         'search',
@@ -2071,21 +2069,17 @@ def activate_user(request, user_id):
 # ADMIN MANAGERS
 # =========================================================
 
+
 def admin_managers(request):
 
     managers = User.objects.filter(
-        role='manager'
-    ).order_by(
-        '-date_joined'
-    )
+    role='manager'
+).order_by('-date_joined')
 
-    search = request.GET.get(
-        'search',
-        ''
-    ).strip()
+
+    search = request.GET.get('search', '').strip()
 
     if search:
-
         managers = managers.filter(
             Q(first_name__icontains=search) |
             Q(email__icontains=search) |
@@ -2101,6 +2095,28 @@ def admin_managers(request):
             'search': search,
         }
     )
+
+
+@login_required
+@require_POST
+def deactivate_manager(request, user_id):
+    manager = get_object_or_404(
+        User,
+        id=user_id,
+        role='manager',
+        is_active=True,
+        approval_status='approved'
+    )
+
+    manager.is_active = False
+    manager.save(update_fields=['is_active'])
+
+    messages.success(
+        request,
+        f'{manager.first_name} has been deactivated successfully.'
+    )
+
+    return redirect('admin_managers')
 
 
 # =========================================================
@@ -2747,7 +2763,7 @@ def balance_payment(request, booking_id):
         messages.error(request, 'Advance payment is not completed.')
         return redirect('booking_history')
 
-    if booking.status != 'active' or not booking.actual_exit_time:
+    if booking.status not in ('active', 'completed') or not booking.actual_exit_time:
         messages.error(
             request,
             'The parking exit must be recorded before balance payment.'
@@ -2825,7 +2841,7 @@ def balance_payment(request, booking_id):
         )
 
         if (
-            locked_booking.status != 'active'
+            locked_booking.status not in ('active', 'completed')
             or not locked_booking.actual_exit_time
         ):
             messages.error(
@@ -2867,7 +2883,7 @@ def balance_payment(request, booking_id):
 
     messages.success(
         request,
-        f'Balance payment of â‚¹{balance_paid} completed successfully.'
+        f'Balance payment of Rs.{balance_paid} completed successfully.'
     )
 
     return redirect('booking_history')
@@ -3400,11 +3416,3 @@ def nearby_parking_data(request):
             {"error": "Invalid response from parking data service."},
             status=502
         )
-
-
-
-
-
-
-
-

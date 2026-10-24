@@ -95,6 +95,7 @@
 
         .menu-icon {
             width: 20px;
+            flex-shrink: 0;
             text-align: center;
             font-size: 17px;
         }
@@ -306,7 +307,6 @@
             margin-top: 3px;
         }
 
-        /* FILTER */
         .filter-panel {
             display: flex;
             align-items: center;
@@ -734,19 +734,39 @@
 
         <nav class="menu">
             <div class="menu-title">Main Menu</div>
-            <a href="/user/dashboard/"><span class="menu-icon">⌂</span> Dashboard</a>
-            <a href="/parking-list/"><span class="menu-icon">⌖</span> Find Parking</a>
-            <a href="/my-bookings/" class="active"><span class="menu-icon">▣</span> My Bookings</a>
-            <a href="/booking-history/"><span class="menu-icon">◷</span> Booking History</a>
+
+            <a href="/user/dashboard/">
+                <span class="menu-icon">&#8962;</span> Dashboard
+            </a>
+
+            <a href="/parking-list/">
+                <span class="menu-icon">&#128269;</span> Find Parking
+            </a>
+
+            <a href="/my-bookings/" class="active">
+                <span class="menu-icon">&#9635;</span> My Bookings
+            </a>
+
+            <a href="/booking-history/">
+                <span class="menu-icon">&#128197;</span> Booking History
+            </a>
 
             <div class="menu-title" style="margin-top:25px;">Support</div>
-            <a href="/complaints/"><span class="menu-icon">✉</span> Complaints</a>
-            <a href="/complaint-status/"><span class="menu-icon">✓</span> Complaint Status</a>
+
+            <a href="/complaints/">
+                <span class="menu-icon">&#9993;</span> Complaints
+            </a>
+
+            <a href="/complaint-status/">
+                <span class="menu-icon">&#10003;</span> Complaint Status
+            </a>
         </nav>
 
         <div class="sidebar-bottom">
             <div class="logout">
-                <a href="/logout/"><span class="menu-icon">↪</span> Logout</a>
+                <a href="/logout/">
+                    <span class="menu-icon">&#10162;</span> Logout
+                </a>
             </div>
         </div>
     </aside>
@@ -758,16 +778,16 @@
                 <p>View and manage your parking reservations</p>
             </div>
 
-<div class="customer">
-    <div class="customer-info">
-        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
-        <span>ParkGrid User</span>
-    </div>
+            <div class="customer">
+                <div class="customer-info">
+                    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                    <span>ParkGrid User</span>
+                </div>
 
-    <div class="avatar">
-        {{ request.user.username|first|upper }}
-    </div>
-</div>
+                <div class="avatar">
+                    {{ request.user.username|first|upper }}
+                </div>
+            </div>
         </header>
 
         <main class="content">
@@ -781,7 +801,7 @@
 
             <section class="summary-card">
                 <div class="summary-left">
-                    <div class="summary-icon">▣</div>
+                    <div class="summary-icon">&#9635;</div>
                     <div>
                         <div class="summary-label">Total bookings</div>
                         <div class="summary-number" id="totalBookings">{{ bookings|length }}</div>
@@ -793,16 +813,15 @@
                 </div>
             </section>
 
-            <!-- BOOKING FILTER -->
             <section class="filter-panel">
                 <div>
                     <label for="bookingFilter" class="filter-label">Filter bookings by status</label>
-         <select id="bookingFilter" class="filter-select">
-    <option value="all">All Bookings</option>
-    <option value="reserved">Reserved</option>
-    <option value="active">Active / In Progress</option>
-    <option value="pending">Payment Pending</option>
-</select>
+                    <select id="bookingFilter" class="filter-select">
+                        <option value="all">All Bookings</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="active">Active / In Progress</option>
+                        <option value="pending">Payment Pending</option>
+                    </select>
                 </div>
                 <div class="filter-result" id="filterResult" aria-live="polite">
                     Showing all bookings
@@ -819,7 +838,7 @@
 
                 {% for booking in bookings %}
                 <article class="booking-card"
-                         data-status="{% if booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}pending{% elif booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'paid' %}completed{% elif booking.status == 'active' and booking.actual_exit_time %}pending{% elif booking.status == 'active' %}active{% else %}{{ booking.status|lower }}{% endif %}">
+                    data-status="{% if booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}pending{% elif booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'paid' %}completed{% elif booking.status == 'active' and booking.actual_exit_time %}pending{% elif booking.status == 'active' %}active{% else %}{{ booking.status|lower }}{% endif %}">
 
                     <div class="booking-header">
                         <div>
@@ -832,7 +851,7 @@
 
                         <div>
                             {% if booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}
-                                <span class="status pending">Exited — Balance Pending</span>
+                                <span class="status pending">Exited &mdash; Balance Pending</span>
                             {% elif booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'paid' %}
                                 <span class="status completed">Completed</span>
                             {% elif booking.status == 'active' and booking.actual_exit_time %}
@@ -913,6 +932,7 @@
                             <div class="payment-item">
                                 <div class="payment-label">Advance amount</div>
                                 <div class="payment-amount">₹{{ booking.payment_obj.advance_amount|default:"0.00" }}</div>
+
                                 {% if booking.payment_obj.advance_status == 'paid' %}
                                     <span class="payment-status">Paid</span>
                                 {% elif booking.payment_obj.advance_status %}
@@ -931,6 +951,7 @@
                             <div class="payment-item">
                                 <div class="payment-label">Remaining balance</div>
                                 <div class="payment-amount">₹{{ booking.payment_obj.balance_amount|default:"0.00" }}</div>
+
                                 {% if booking.payment_obj.balance_status == 'paid' %}
                                     <span class="payment-status">Paid</span>
                                 {% elif booking.payment_obj.balance_status == 'pending' %}
@@ -943,7 +964,7 @@
                             </div>
                         </div>
                         {% else %}
-                        <div class="no-payment">No payment record is available for this booking yet.</div>
+                            <div class="no-payment">No payment record is available for this booking yet.</div>
                         {% endif %}
 
                         {% if booking.status == 'active' and booking.actual_exit_time and booking.payment_obj and booking.payment_obj.balance_status == 'pending' %}
@@ -971,7 +992,7 @@
                                         </a>
                                     {% endif %}
 
-                                    {% if booking.payment_obj.advance_status == 'paid' and not booking.actual_exit_time and booking.status == 'active' %}
+                                    {% if booking.payment_obj.advance_status == 'paid' and not booking.actual_exit_time %}
                                         <a href="{% url 'qr_code' booking.id %}" class="secondary-btn">
                                             View Booking QR
                                         </a>
@@ -987,8 +1008,8 @@
 
                             {% if booking.can_cancel %}
                             <form method="POST"
-                                  action="{% url 'cancel_booking' booking.id %}"
-                                  onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                action="{% url 'cancel_booking' booking.id %}"
+                                onsubmit="return confirm('Are you sure you want to cancel this booking?');">
                                 {% csrf_token %}
                                 <button type="submit" class="cancel-btn">Cancel Booking</button>
                             </form>
@@ -998,7 +1019,7 @@
                 </article>
                 {% empty %}
                 <div class="empty-state" id="noBookings">
-                    <div class="empty-icon">▣</div>
+                    <div class="empty-icon">&#9635;</div>
                     <h2>No bookings found</h2>
                     <p>You haven't made any parking bookings yet. Find a parking space to get started.</p>
                     <a href="/parking-list/" class="primary-btn">Find Parking</a>

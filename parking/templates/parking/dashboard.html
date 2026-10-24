@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ParkGrid | Customer Portal</title>
+    <title>ParkGrid | Customer Dashboard</title>
 
     <style>
         * {
@@ -13,32 +13,46 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --navy: #102a43;
+            --teal: #087f8c;
+            --teal-light: #edf7f6;
+            --background: #f4f7f9;
+            --border: #e1e8ed;
+            --muted: #7b8794;
+        }
+
         body {
             font-family: "Segoe UI", Arial, sans-serif;
-            background: #f4f7f9;
+            background: var(--background);
             color: #17212b;
+        }
+
+        a {
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* SIDEBAR */
         .sidebar {
             position: fixed;
-            left: 0;
-            top: 0;
+            inset: 0 auto 0 0;
             width: 245px;
             height: 100vh;
-            background: #102a43;
+            overflow-y: auto;
+            background: var(--navy);
             color: white;
             padding: 28px 18px;
+            z-index: 10;
         }
 
         .brand {
-            padding: 0 14px 35px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding: 0 14px 28px;
+            border-bottom: 1px solid rgba(255,255,255,.12);
         }
 
         .brand h1 {
             font-size: 27px;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
         }
 
         .brand span {
@@ -52,12 +66,12 @@
         }
 
         .menu {
-            margin-top: 30px;
+            margin-top: 25px;
         }
 
         .menu-title {
             padding: 0 14px;
-            margin-bottom: 12px;
+            margin: 0 0 12px;
             color: #829ab1;
             font-size: 11px;
             text-transform: uppercase;
@@ -74,7 +88,7 @@
             color: #d9e2ec;
             text-decoration: none;
             font-size: 14px;
-            transition: 0.2s;
+            transition: background .2s;
         }
 
         .menu a:hover {
@@ -88,20 +102,20 @@
         }
 
         .menu-icon {
+            display: inline-flex;
             width: 22px;
-            text-align: center;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
             font-size: 16px;
         }
 
         .sidebar-bottom {
-            position: absolute;
-            bottom: 25px;
-            left: 18px;
-            right: 18px;
+            margin-top: 30px;
         }
 
         .logout {
-            border-top: 1px solid rgba(255,255,255,0.12);
+            border-top: 1px solid rgba(255,255,255,.12);
             padding-top: 18px;
         }
 
@@ -119,12 +133,12 @@
         .topbar {
             min-height: 76px;
             background: white;
-            border-bottom: 1px solid #e1e8ed;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 15px 40px;
-            gap: 15px;
+            padding: 15px 36px;
+            gap: 18px;
         }
 
         .page-title h2 {
@@ -133,7 +147,7 @@
         }
 
         .page-title p {
-            color: #7b8794;
+            color: var(--muted);
             font-size: 12px;
             margin-top: 4px;
         }
@@ -142,10 +156,12 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            min-width: 0;
         }
 
         .customer-info {
             text-align: right;
+            overflow-wrap: anywhere;
         }
 
         .customer-info strong {
@@ -154,44 +170,46 @@
         }
 
         .customer-info span {
-            color: #7b8794;
+            color: var(--muted);
             font-size: 12px;
         }
 
         .avatar {
             width: 40px;
             height: 40px;
+            flex-shrink: 0;
             border-radius: 50%;
             background: #d8f3ef;
-            color: #087f8c;
+            color: var(--teal);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
         }
 
-        /* CONTENT */
+        /* PAGE CONTENT */
         .content {
-            padding: 35px 40px;
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 32px 36px;
         }
 
-        /* WELCOME */
+        /* WELCOME BANNER */
         .welcome {
             background: linear-gradient(120deg, #102a43, #167d8d);
             border-radius: 14px;
-            padding: 34px 38px;
+            padding: 32px 34px;
             color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
+            gap: 24px;
             margin-bottom: 30px;
-            overflow: hidden;
         }
 
         .welcome h1 {
-            font-size: 28px;
+            font-size: 27px;
             font-weight: 600;
             margin-bottom: 9px;
         }
@@ -199,14 +217,15 @@
         .welcome p {
             color: #d9f2f0;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.7;
+            max-width: 560px;
         }
 
         .find-btn {
             display: inline-block;
-            padding: 13px 22px;
+            padding: 13px 21px;
             background: white;
-            color: #102a43;
+            color: var(--navy);
             border-radius: 7px;
             text-decoration: none;
             font-size: 14px;
@@ -218,48 +237,7 @@
             background: #edf7f6;
         }
 
-        /* STATISTICS */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 18px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 11px;
-            padding: 21px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-            flex-shrink: 0;
-            border-radius: 9px;
-            background: #edf7f6;
-            color: #087f8c;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
-        }
-
-        .stat-card h3 {
-            font-size: 21px;
-            margin-bottom: 3px;
-        }
-
-        .stat-card p {
-            color: #7b8794;
-            font-size: 12px;
-        }
-
-        /* SECTION HEADING */
+        /* SHARED SECTION HEADING */
         .section-heading {
             display: flex;
             justify-content: space-between;
@@ -273,80 +251,209 @@
             font-weight: 600;
         }
 
-        .section-heading span {
-            color: #7b8794;
+        .section-heading > span {
+            color: var(--muted);
             font-size: 12px;
         }
 
-        /* QUICK ACTION CARDS */
+        /* ACCOUNT WARNINGS */
+        .account-warnings {
+            margin-bottom: 30px;
+        }
+
+        .warning-card {
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            border: 1px solid #f0c36d;
+            border-radius: 11px;
+            background: #fff8e6;
+            overflow-wrap: anywhere;
+        }
+
+        .warning-title {
+            display: block;
+            margin-bottom: 8px;
+            color: #805b00;
+            font-size: 15px;
+        }
+
+        .warning-message {
+            margin-bottom: 9px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .warning-card small {
+            color: #756b55;
+            font-size: 12px;
+        }
+
+        .review-pending {
+            margin-top: 12px;
+            color: #8a5a00;
+            font-size: 13px;
+        }
+
+        .warning-review {
+            margin-top: 14px;
+            padding: 14px;
+            background: #f0f7ff;
+            border: 1px solid #c7ddff;
+            border-radius: 8px;
+        }
+
+        .warning-review p {
+            margin: 5px 0;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .warning-review small {
+            display: block;
+            margin-top: 9px;
+        }
+
+        /* STATISTICS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 34px;
+            align-items: stretch;
+        }
+
+        .stat-card {
+            min-width: 0;
+            min-height: 105px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 21px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(16,42,67,.02);
+        }
+
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+            flex-shrink: 0;
+            border-radius: 9px;
+            background: var(--teal-light);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            font-weight: 600;
+        }
+
+        .stat-card h3 {
+            font-size: 23px;
+            margin-bottom: 4px;
+        }
+
+        .stat-card p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* QUICK ACTIONS */
+        .quick-actions {
+            margin-bottom: 32px;
+        }
+
         .cards {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 20px;
+            align-items: stretch;
         }
 
         .card {
+            min-width: 0;
+            min-height: 225px;
             background: white;
-            border: 1px solid #e1e8ed;
+            border: 1px solid var(--border);
             border-radius: 11px;
             padding: 24px;
-            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            transition: transform .2s, box-shadow .2s;
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16,42,67,0.08);
+            box-shadow: 0 8px 20px rgba(16,42,67,.07);
         }
 
         .card-icon {
             width: 43px;
             height: 43px;
-            background: #edf7f6;
-            color: #087f8c;
+            flex-shrink: 0;
+            background: var(--teal-light);
+            color: var(--teal);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            margin-bottom: 17px;
+            font-weight: 600;
+            margin-bottom: 16px;
         }
 
         .card h3 {
             font-size: 16px;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
 
         .card p {
-            color: #7b8794;
+            color: var(--muted);
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.7;
             margin-bottom: 18px;
+            flex-grow: 1;
         }
 
-        .card-link {
+        .card-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin-top: auto;
+        }
+
+        .card-link,
+        .help-link {
             display: inline-block;
-            color: #087f8c;
+            color: var(--teal);
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
-            margin: 3px 0;
         }
 
-        .card-link:hover {
-            color: #102a43;
+        .card-link:hover,
+        .help-link:hover {
+            color: var(--navy);
+            text-decoration: underline;
         }
 
-        /* LOWER SECTION */
+        /* INFORMATION */
         .lower {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 18px;
-            margin-top: 32px;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+            gap: 20px;
+            margin-top: 8px;
+            align-items: stretch;
         }
 
         .info-card {
+            min-width: 0;
             background: white;
-            border: 1px solid #e1e8ed;
+            border: 1px solid var(--border);
             border-radius: 11px;
             padding: 25px;
         }
@@ -357,44 +464,39 @@
         }
 
         .info-card p {
-            color: #7b8794;
+            color: var(--muted);
             font-size: 13px;
-            line-height: 1.7;
+            line-height: 1.8;
         }
 
         .help-link {
-            display: inline-block;
             margin-top: 17px;
-            color: #087f8c;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
         }
 
         /* FOOTER */
         .footer {
-            padding: 30px 40px;
+            padding: 28px 20px;
             color: #829ab1;
             font-size: 11px;
             text-align: center;
         }
 
-        /* RESPONSIVE DESIGN */
-        @media (max-width: 1050px) {
+        /* RESPONSIVE */
+        @media (max-width: 1100px) {
+            .content {
+                padding: 28px 24px;
+            }
+
+            .topbar {
+                padding: 15px 24px;
+            }
+
             .stats {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .lower {
                 grid-template-columns: 1fr;
-            }
-
-            .content {
-                padding: 25px;
-            }
-
-            .topbar {
-                padding: 15px 25px;
             }
         }
 
@@ -403,11 +505,28 @@
                 position: relative;
                 width: 100%;
                 height: auto;
+                padding: 20px 16px;
+                overflow: visible;
+            }
+
+            .brand {
+                padding-bottom: 18px;
+            }
+
+            .menu {
+                margin-top: 18px;
+            }
+
+            .menu-title {
+                margin-top: 16px;
+            }
+
+            .menu a {
+                padding: 11px 12px;
             }
 
             .sidebar-bottom {
-                position: static;
-                margin-top: 20px;
+                margin-top: 18px;
             }
 
             .main {
@@ -415,16 +534,17 @@
             }
 
             .topbar {
-                padding: 15px 20px;
+                padding: 16px 20px;
             }
 
             .content {
-                padding: 25px 20px;
+                padding: 22px 16px;
             }
 
             .welcome {
                 flex-direction: column;
                 align-items: flex-start;
+                padding: 25px 22px;
             }
 
             .welcome h1 {
@@ -436,13 +556,66 @@
                 grid-template-columns: 1fr;
             }
 
+            .stat-card {
+                min-height: 95px;
+            }
+
+            .card {
+                min-height: 205px;
+            }
+
             .section-heading {
                 align-items: flex-start;
                 flex-direction: column;
+                gap: 5px;
             }
 
-            .footer {
-                padding: 25px 15px;
+            .lower {
+                grid-template-columns: 1fr;
+            }
+
+            .customer-info strong {
+                max-width: 150px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .topbar {
+                align-items: flex-start;
+                gap: 10px;
+                padding: 15px 12px;
+            }
+
+            .page-title h2 {
+                font-size: 17px;
+            }
+
+            .customer {
+                gap: 7px;
+            }
+
+            .customer-info strong {
+                max-width: 105px;
+                font-size: 12px;
+            }
+
+            .customer-info span {
+                font-size: 11px;
+            }
+
+            .avatar {
+                width: 34px;
+                height: 34px;
+            }
+
+            .content {
+                padding: 18px 12px;
+            }
+
+            .stat-card,
+            .card,
+            .info-card {
+                padding: 19px;
             }
         }
     </style>
@@ -452,14 +625,12 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-
         <div class="brand">
             <h1>Park<span>Grid</span></h1>
             <p>Customer Parking Portal</p>
         </div>
 
-        <div class="menu">
-
+        <nav class="menu">
             <div class="menu-title">Main Menu</div>
 
             <a href="/user/dashboard/" class="active">
@@ -471,10 +642,11 @@
                 <span class="menu-icon">⌖</span>
                 Find Parking
             </a>
+
             <a href="/nearby-pay-park/">
-    <span class="menu-icon">📍</span>
-    Nearby Pay &amp; Park
-</a>
+                <span class="menu-icon">◎</span>
+                Nearby Pay &amp; Park
+            </a>
 
             <a href="/my-bookings/">
                 <span class="menu-icon">▣</span>
@@ -499,18 +671,16 @@
                 <span class="menu-icon">✓</span>
                 Complaint Status
             </a>
-
-        </div>
+        </nav>
 
         <div class="sidebar-bottom">
             <div class="logout">
-                <a href="/logout/">
+                <a href="/logout/" style="display:flex;align-items:center;gap:13px;padding:12px 14px;text-decoration:none;">
                     <span class="menu-icon">↪</span>
                     Logout
                 </a>
             </div>
         </div>
-
     </aside>
 
     <!-- MAIN AREA -->
@@ -518,7 +688,6 @@
 
         <!-- TOP BAR -->
         <header class="topbar">
-
             <div class="page-title">
                 <h2>Customer Dashboard</h2>
                 <p>Manage your parking experience</p>
@@ -534,18 +703,14 @@
                     {{ request.user.username|first|upper }}
                 </div>
             </div>
-
         </header>
 
-        <!-- CONTENT -->
         <main class="content">
 
             <!-- WELCOME -->
             <section class="welcome">
-
                 <div class="welcome-content">
                     <h1>Welcome back! 👋</h1>
-
                     <p>
                         Find your parking space quickly and manage
                         your reservations from one place.
@@ -554,73 +719,76 @@
 
                 <div class="welcome-action">
                     <a href="/parking-list/" class="find-btn">
-                        Find Parking →
+                        Find Parking &rarr;
                     </a>
                 </div>
-
             </section>
 
-            <!-- STATISTICS: DYNAMIC VALUES PRESERVED -->
-            <section class="stats">
-                {% if warnings %}
-<section style="margin-bottom: 24px;">
-    <div class="section-heading">
-        <h2>Account Warnings</h2>
-        <span>Please review your booking activity</span>
-    </div>
+            <!-- ACCOUNT WARNINGS: OUTSIDE THE STATISTICS GRID -->
+            {% if warnings %}
+            <section class="account-warnings">
+                <div class="section-heading">
+                    <h2>Account Warnings</h2>
+                    <span>Please review your booking activity</span>
+                </div>
 
-    {% for warning in warnings %}
-    <div style="padding: 16px; margin-bottom: 12px; border: 1px solid #f0c36d; border-radius: 10px; background: #fff8e6;">
-        <strong>
-            {% if warning.level == 'final_warning' %}
-                Final Warning
-            {% else %}
-                Warning
+                {% for warning in warnings %}
+                <div class="warning-card">
+                    <strong class="warning-title">
+                        {% if warning.level == 'final_warning' %}
+                            Final Warning
+                        {% else %}
+                            Warning
+                        {% endif %}
+                    </strong>
+
+                    <p class="warning-message">{{ warning.message }}</p>
+
+                    <small>
+                        {{ warning.created_at|date:"d M Y, h:i A" }}
+                    </small>
+
+                    {% if warning.requires_admin_review %}
+                        <p class="review-pending">
+                            <strong>Admin Review:</strong> Pending
+                        </p>
+
+                    {% elif warning.admin_reviewed_at %}
+                        <div class="warning-review">
+                            <p>
+                                <strong>Admin Decision:</strong>
+                                {{ warning.get_admin_decision_display }}
+                            </p>
+
+                            <p>
+                                <strong>Review Status:</strong> Reviewed
+                            </p>
+
+                            <p>
+                                <strong>Review Reason:</strong>
+                                {{ warning.admin_review_reason|linebreaksbr }}
+                            </p>
+
+                            {% if warning.admin_decision == 'further_action' %}
+                                <p>
+                                    <strong>Action Status:</strong>
+                                    {{ warning.get_admin_action_status_display|default:"Not specified" }}
+                                </p>
+                            {% endif %}
+
+                            <small>
+                                Reviewed on
+                                {{ warning.admin_reviewed_at|date:"d M Y, h:i A" }}
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </section>
             {% endif %}
-        </strong>
 
-        <p style="margin: 8px 0;">{{ warning.message }}</p>
-
-        <small>{{ warning.created_at|date:"d M Y, h:i A" }}</small>
-
-
-        {% if warning.requires_admin_review %}
-            <p style="margin-top: 8px; color: #9a6700;">
-                <strong>Admin Review:</strong> Pending
-            </p>
-        {% elif warning.admin_reviewed_at %}
-            <div style="margin-top: 12px; padding: 12px; background: #f0f7ff; border-radius: 8px; border: 1px solid #c7ddff;">
-                <p style="margin: 4px 0;">
-                    <strong>Admin Decision:</strong>
-                    {{ warning.get_admin_decision_display }}
-                </p>
-
-                <p style="margin: 4px 0;">
-                    <strong>Review Status:</strong> Reviewed
-                </p>
-
-                <p style="margin: 4px 0;">
-                    <strong>Review Reason:</strong>
-                    {{ warning.admin_review_reason|linebreaksbr }}
-                </p>
-
-                {% if warning.admin_decision == 'further_action' %}
-                    <p style="margin: 4px 0;">
-                        <strong>Action Status:</strong>
-                        {{ warning.get_admin_action_status_display|default:"Not specified" }}
-                    </p>
-                {% endif %}
-
-                <small>
-                    Reviewed on {{ warning.admin_reviewed_at|date:"d M Y, h:i A" }}
-                </small>
-            </div>
-        {% endif %}
-
-    </div>
-    {% endfor %}
-</section>
-{% endif %}
+            <!-- STATISTICS: THREE ALIGNED CARDS -->
+            <section class="stats">
 
                 <div class="stat-card">
                     <div class="stat-icon">▣</div>
@@ -649,83 +817,88 @@
             </section>
 
             <!-- QUICK ACTIONS -->
-            <div class="section-heading">
-                <h2>Quick Actions</h2>
-                <span>Access your parking services</span>
-            </div>
-
-            <section class="cards">
-
-                <!-- FIND PARKING -->
-                <div class="card">
-                    <div class="card-icon">⌖</div>
-                    <h3>Find Parking</h3>
-                    <p>
-                        Explore parking facilities and find
-                        a suitable location for your vehicle.
-                    </p>
-                    <a href="/parking-list/" class="card-link">
-                        Search Parking →
-                    </a>
+            <section class="quick-actions">
+                <div class="section-heading">
+                    <h2>Quick Actions</h2>
+                    <span>Access your parking services</span>
                 </div>
 
-                <!-- MY BOOKINGS -->
-                <div class="card">
-                    <div class="card-icon">▣</div>
-                    <h3>My Bookings</h3>
-                    <p>
-                        View and manage your current
-                        parking reservations.
-                    </p>
-                    <a href="/my-bookings/" class="card-link">
-                        View Bookings →
-                    </a>
+                <div class="cards">
+
+                    <div class="card">
+                        <div class="card-icon">⌖</div>
+                        <h3>Find Parking</h3>
+                        <p>
+                            Explore parking facilities and find
+                            a suitable location for your vehicle.
+                        </p>
+                        <div class="card-links">
+                            <a href="/parking-list/" class="card-link">
+                                Search Parking &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">▣</div>
+                        <h3>My Bookings</h3>
+                        <p>
+                            View and manage your current
+                            parking reservations.
+                        </p>
+                        <div class="card-links">
+                            <a href="/my-bookings/" class="card-link">
+                                View Bookings &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">◎</div>
+                        <h3>Nearby Pay &amp; Park</h3>
+                        <p>
+                            Find nearby parking locations around you
+                            and explore available parking spots.
+                        </p>
+                        <div class="card-links">
+                            <a href="/nearby-pay-park/" class="card-link">
+                                Find Nearby Parking &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">◷</div>
+                        <h3>Booking History</h3>
+                        <p>
+                            Review your completed, expired and
+                            cancelled parking reservations.
+                        </p>
+                        <div class="card-links">
+                            <a href="/booking-history/" class="card-link">
+                                View History &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">✉</div>
+                        <h3>Complaints &amp; Support</h3>
+                        <p>
+                            Report a parking issue or check the
+                            status of a complaint you submitted.
+                        </p>
+                        <div class="card-links">
+                            <a href="/complaints/" class="card-link">
+                                Submit Complaint &rarr;
+                            </a>
+                            <a href="/complaint-status/" class="card-link">
+                                Track Complaint &rarr;
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
-                                <!-- NEARBY PAY & PARK -->
-                <div class="card">
-                    <div class="card-icon">📍</div>
-                    <h3>Nearby Pay &amp; Park</h3>
-                    <p>
-                        Find nearby parking locations around you
-                        and explore available parking spots.
-                    </p>
-                    <a href="/nearby-pay-park/" class="card-link">
-                        Find Nearby Parking →
-                    </a>
-                </div>
-
-
-
-                <!-- BOOKING HISTORY -->
-                <div class="card">
-                    <div class="card-icon">◷</div>
-                    <h3>Booking History</h3>
-                    <p>
-                        Review your completed, expired and
-                        cancelled parking reservations.
-                    </p>
-                    <a href="/booking-history/" class="card-link">
-                        View History →
-                    </a>
-                </div>
-
-                <!-- COMPLAINTS AND SUPPORT -->
-                <div class="card">
-                    <div class="card-icon">✉</div>
-                    <h3>Complaints &amp; Support</h3>
-                    <p>
-                        Report a parking issue or check the
-                        status of a complaint you submitted.
-                    </p>
-                    <a href="/complaints/" class="card-link">
-                        Submit Complaint →
-                    </a>
-                    <br>
-                    <a href="/complaint-status/" class="card-link">
-                        Track Complaint →
-                    </a>
-                </div>
-
             </section>
 
             <!-- INFORMATION -->
@@ -733,7 +906,6 @@
 
                 <div class="info-card">
                     <h3>Parking Made Simple</h3>
-
                     <p>
                         ParkGrid gives customers a convenient way
                         to discover parking facilities, select
@@ -743,13 +915,12 @@
                     </p>
 
                     <a href="/parking-list/" class="help-link">
-                        Start Finding Parking →
+                        Start Finding Parking &rarr;
                     </a>
                 </div>
 
                 <div class="info-card">
                     <h3>Need Assistance?</h3>
-
                     <p>
                         If you experience an issue with a parking
                         facility or booking, you can submit a
@@ -757,7 +928,7 @@
                     </p>
 
                     <a href="/complaints/" class="help-link">
-                        Contact Support →
+                        Contact Support &rarr;
                     </a>
                 </div>
 
@@ -766,7 +937,7 @@
         </main>
 
         <footer class="footer">
-            © 2026 ParkGrid · Customer Parking Portal
+            &copy; 2026 ParkGrid &middot; Customer Parking Portal
         </footer>
 
     </div>

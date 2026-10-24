@@ -1,14 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>ParkGrid - Register</title>
 
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -22,6 +19,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px 0;
         }
 
         .container {
@@ -34,8 +32,6 @@
             box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
             display: flex;
         }
-
-        /* LEFT SIDE */
 
         .left {
             width: 42%;
@@ -64,8 +60,6 @@
             line-height: 1.7;
             opacity: 0.9;
         }
-
-        /* RIGHT SIDE */
 
         .right {
             width: 58%;
@@ -105,11 +99,18 @@
             outline: none;
             font-size: 14px;
             background: white;
+            color: #222;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             border-color: #1e5eff;
+            box-shadow: 0 0 0 3px rgba(30, 94, 255, 0.08);
+        }
+
+        .form-group input.invalid,
+        .form-group select.invalid {
+            border-color: #dc3545;
         }
 
         .password-wrapper {
@@ -135,8 +136,9 @@
 
         .error {
             color: #dc3545;
-            font-size: 13px;
+            font-size: 12px;
             margin-top: 5px;
+            line-height: 1.4;
         }
 
         .message {
@@ -144,6 +146,7 @@
             border-radius: 7px;
             margin-bottom: 15px;
             font-size: 14px;
+            overflow-wrap: anywhere;
         }
 
         .message.success {
@@ -187,14 +190,7 @@
             font-weight: 600;
         }
 
-        /* MOBILE */
-
         @media (max-width: 700px) {
-
-            body {
-                padding: 20px 0;
-            }
-
             .container {
                 flex-direction: column;
                 max-width: 92%;
@@ -217,7 +213,6 @@
                 padding: 35px 30px;
             }
         }
-
     </style>
 </head>
 
@@ -225,13 +220,8 @@
 
 <div class="container">
 
-    <!-- LEFT SIDE -->
-
     <div class="left">
-
-        <div class="logo">
-            ParkGrid
-        </div>
+        <div class="logo">ParkGrid</div>
 
         <h1>
             Find Your Spot.<br>
@@ -242,63 +232,35 @@
             Create your ParkGrid account and enjoy
             smarter, faster and easier parking.
         </p>
-
     </div>
-
-
-    <!-- RIGHT SIDE -->
 
     <div class="right">
 
         <h2>Create Account</h2>
+        <p class="subtitle">Register to start using ParkGrid.</p>
 
-        <p class="subtitle">
-            Register to start using ParkGrid.
-        </p>
-
-
-        <!-- Django Messages -->
-
+        <!-- DJANGO MESSAGES -->
         {% if messages %}
-
             {% for message in messages %}
-
-                <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                <div class="message {% if 'success' in message.tags %}success{% else %}error{% endif %}">
                     {{ message }}
                 </div>
-
             {% endfor %}
-
         {% endif %}
 
-
-        <!-- Form Errors -->
-
+        <!-- FORM ERRORS -->
         {% if form.non_field_errors %}
-
             {% for error in form.non_field_errors %}
-
-                <div class="message error">
-                    {{ error }}
-                </div>
-
+                <div class="message error">{{ error }}</div>
             {% endfor %}
-
         {% endif %}
 
-
-        <form method="POST" autocomplete="off">
-
+        <form method="POST" id="registerForm" autocomplete="off" novalidate>
             {% csrf_token %}
 
-
             <!-- FULL NAME -->
-
             <div class="form-group">
-
-                <label for="full_name">
-                    Full Name
-                </label>
+                <label for="full_name">Full Name</label>
 
                 <input
                     type="text"
@@ -307,25 +269,19 @@
                     placeholder="Enter your full name"
                     value="{{ form.full_name.value|default:'' }}"
                     autocomplete="off"
+                    maxlength="100"
                     required
+                    aria-describedby="fullNameError"
                 >
 
-                {% for error in form.full_name.errors %}
-                    <div class="error">
-                        {{ error }}
-                    </div>
-                {% endfor %}
-
+                <div class="error" id="fullNameError" role="alert">
+                    {% for error in form.full_name.errors %}{{ error }}{% endfor %}
+                </div>
             </div>
 
-
             <!-- EMAIL -->
-
             <div class="form-group">
-
-                <label for="email">
-                    Email
-                </label>
+                <label for="email">Email</label>
 
                 <input
                     type="email"
@@ -334,86 +290,67 @@
                     placeholder="Enter your email"
                     value="{{ form.email.value|default:'' }}"
                     autocomplete="off"
+                    maxlength="254"
                     required
+                    aria-describedby="emailError"
                 >
 
-                {% for error in form.email.errors %}
-                    <div class="error">
-                        {{ error }}
-                    </div>
-                {% endfor %}
-
+                <div class="error" id="emailError" role="alert">
+                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                </div>
             </div>
 
-
             <!-- PHONE -->
-
             <div class="form-group">
-
-                <label for="phone">
-                    Phone Number
-                </label>
+                <label for="phone">Phone Number</label>
 
                 <input
                     type="tel"
                     id="phone"
                     name="phone"
-                    placeholder="Enter your phone number"
+                    placeholder="Enter 10-digit mobile number"
                     value="{{ form.phone.value|default:'' }}"
                     autocomplete="off"
+                    inputmode="numeric"
+                    maxlength="10"
+                    required
+                    aria-describedby="phoneError"
                 >
 
-                {% for error in form.phone.errors %}
-                    <div class="error">
-                        {{ error }}
-                    </div>
-                {% endfor %}
-
+                <div class="error" id="phoneError" role="alert">
+                    {% for error in form.phone.errors %}{{ error }}{% endfor %}
+                </div>
             </div>
 
-
             <!-- ROLE -->
-
             <div class="form-group">
+                <label for="role">Account Type</label>
 
-                <label for="role">
-                    Account Type
-                </label>
-
-                <select
-                    id="role"
-                    name="role"
-                    autocomplete="off"
-                    required
-                >
-
-                    <option value="" disabled selected>
+                <select id="role" name="role" required aria-describedby="roleError">
+                    <option value="" disabled
+                        {% if not form.role.value %}selected{% endif %}>
                         Select account type
                     </option>
 
-                    <option value="user">
+                    <option value="user"
+                        {% if form.role.value == 'user' %}selected{% endif %}>
                         User
                     </option>
 
-                    <option value="manager">
+                    <option value="manager"
+                        {% if form.role.value == 'manager' %}selected{% endif %}>
                         Parking Manager
                     </option>
-
                 </select>
 
+                <div class="error" id="roleError" role="alert"></div>
             </div>
 
-
             <!-- PASSWORD -->
-
             <div class="form-group">
-
-                <label for="password">
-                    Password
-                </label>
+                <label for="password">Password</label>
 
                 <div class="password-wrapper">
-
                     <input
                         type="password"
                         id="password"
@@ -421,37 +358,28 @@
                         placeholder="Create a password"
                         autocomplete="new-password"
                         required
+                        aria-describedby="passwordError"
                     >
 
                     <button
                         type="button"
                         class="show-password"
                         onclick="togglePassword('password', this)"
-                    >
-                        Show
-                    </button>
-
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >Show</button>
                 </div>
 
-                {% for error in form.password.errors %}
-                    <div class="error">
-                        {{ error }}
-                    </div>
-                {% endfor %}
-
+                <div class="error" id="passwordError" role="alert">
+                    {% for error in form.password.errors %}{{ error }}{% endfor %}
+                </div>
             </div>
 
-
             <!-- CONFIRM PASSWORD -->
-
             <div class="form-group">
-
-                <label for="confirm_password">
-                    Confirm Password
-                </label>
+                <label for="confirm_password">Confirm Password</label>
 
                 <div class="password-wrapper">
-
                     <input
                         type="password"
                         id="confirm_password"
@@ -459,78 +387,220 @@
                         placeholder="Re-enter your password"
                         autocomplete="new-password"
                         required
+                        aria-describedby="confirmPasswordError"
                     >
 
                     <button
                         type="button"
                         class="show-password"
                         onclick="togglePassword('confirm_password', this)"
-                    >
-                        Show
-                    </button>
-
+                        aria-label="Show confirm password"
+                        aria-pressed="false"
+                    >Show</button>
                 </div>
 
-                {% for error in form.confirm_password.errors %}
-                    <div class="error">
-                        {{ error }}
-                    </div>
-                {% endfor %}
-
+                <div class="error" id="confirmPasswordError" role="alert">
+                    {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
+                </div>
             </div>
 
-
-            <!-- REGISTER -->
-
-            <button
-                type="submit"
-                class="register-btn"
-            >
+            <button type="submit" class="register-btn">
                 Create Account
             </button>
-
         </form>
 
-
-        <!-- LOGIN LINK -->
-
         <div class="login-link">
-
             Already have an account?
-
-            <a href="{% url 'login' %}">
-                Login
-            </a>
-
+            <a href="{% url 'login' %}">Login</a>
         </div>
 
     </div>
-
 </div>
 
-
 <script>
+    const registerForm = document.getElementById("registerForm");
 
-function togglePassword(fieldId, button) {
+    const fullName = document.getElementById("full_name");
+    const email = document.getElementById("email");
+    const phone = document.getElementById("phone");
+    const role = document.getElementById("role");
+    const password = document.getElementById("password");
+    const confirmPassword = document.getElementById("confirm_password");
 
-    const field = document.getElementById(fieldId);
-
-    if (field.type === "password") {
-
-        field.type = "text";
-        button.textContent = "Hide";
-
-    } else {
-
-        field.type = "password";
-        button.textContent = "Show";
-
+    function setError(input, errorId, message) {
+        document.getElementById(errorId).textContent = message;
+        input.classList.toggle("invalid", Boolean(message));
+        input.setAttribute("aria-invalid", message ? "true" : "false");
     }
 
-}
+    function validateFullName() {
+        const value = fullName.value.trim();
 
+        if (!value) {
+            setError(fullName, "fullNameError", "Please enter your full name.");
+            return false;
+        }
+
+        if (value.length < 2) {
+            setError(fullName, "fullNameError", "Name must contain at least 2 characters.");
+            return false;
+        }
+
+        // Allows Unicode letters, including Malayalam, and spaces.
+        if (!/^[\p{L}\p{M}]+(?:[ '\u2019-][\p{L}\p{M}]+)*$/u.test(value)) {
+            setError(fullName, "fullNameError", "Use letters and spaces only.");
+            return false;
+        }
+
+        setError(fullName, "fullNameError", "");
+        return true;
+    }
+
+    function validateEmail() {
+        const value = email.value.trim();
+
+        if (!value) {
+            setError(email, "emailError", "Please enter your email address.");
+            return false;
+        }
+
+        if (value.length > 254 ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            setError(email, "emailError", "Please enter a valid email address.");
+            return false;
+        }
+
+        setError(email, "emailError", "");
+        return true;
+    }
+
+    function validatePhone() {
+        const value = phone.value.trim();
+
+        if (!value) {
+            setError(phone, "phoneError", "Please enter your mobile number.");
+            return false;
+        }
+
+        if (!/^[6-9]\d{9}$/.test(value)) {
+            setError(phone, "phoneError", "Enter a valid 10-digit Indian mobile number.");
+            return false;
+        }
+
+        setError(phone, "phoneError", "");
+        return true;
+    }
+
+    function validateRole() {
+        if (!["user", "manager"].includes(role.value)) {
+            setError(role, "roleError", "Please select an account type.");
+            return false;
+        }
+
+        setError(role, "roleError", "");
+        return true;
+    }
+
+    function validatePassword() {
+        const value = password.value;
+
+        if (!value) {
+            setError(password, "passwordError", "Please create a password.");
+            return false;
+        }
+
+        if (value.length < 8) {
+            setError(password, "passwordError", "Password must contain at least 8 characters.");
+            return false;
+        }
+
+        if (value.length > 128) {
+            setError(password, "passwordError", "Password cannot exceed 128 characters.");
+            return false;
+        }
+
+        if (!/[A-Z]/.test(value)) {
+            setError(password, "passwordError", "Include at least one uppercase letter (A-Z).");
+            return false;
+        }
+
+        if (!/[a-z]/.test(value)) {
+            setError(password, "passwordError", "Include at least one lowercase letter (a-z).");
+            return false;
+        }
+
+        if (!/\d/.test(value)) {
+            setError(password, "passwordError", "Include at least one number (0-9).");
+            return false;
+        }
+
+        if (!/[^A-Za-z0-9]/.test(value)) {
+            setError(password, "passwordError", "Include at least one special character.");
+            return false;
+        }
+
+        setError(password, "passwordError", "");
+        return true;
+    }
+
+    function validateConfirmPassword() {
+        if (!confirmPassword.value) {
+            setError(confirmPassword, "confirmPasswordError", "Please confirm your password.");
+            return false;
+        }
+
+        if (password.value !== confirmPassword.value) {
+            setError(confirmPassword, "confirmPasswordError", "Passwords do not match.");
+            return false;
+        }
+
+        setError(confirmPassword, "confirmPasswordError", "");
+        return true;
+    }
+
+    fullName.addEventListener("input", validateFullName);
+    email.addEventListener("input", validateEmail);
+    phone.addEventListener("input", validatePhone);
+    role.addEventListener("change", validateRole);
+    password.addEventListener("input", function () {
+        validatePassword();
+
+        if (confirmPassword.value) {
+            validateConfirmPassword();
+        }
+    });
+    confirmPassword.addEventListener("input", validateConfirmPassword);
+
+    registerForm.addEventListener("submit", function (event) {
+        const checks = [
+            validateFullName(),
+            validateEmail(),
+            validatePhone(),
+            validateRole(),
+            validatePassword(),
+            validateConfirmPassword()
+        ];
+
+        if (checks.includes(false)) {
+            event.preventDefault();
+
+            const firstInvalid = registerForm.querySelector(".invalid");
+            if (firstInvalid) {
+                firstInvalid.focus();
+            }
+        }
+    });
+
+    function togglePassword(fieldId, button) {
+        const field = document.getElementById(fieldId);
+        const show = field.type === "password";
+
+        field.type = show ? "text" : "password";
+        button.textContent = show ? "Hide" : "Show";
+        button.setAttribute("aria-label", show ? "Hide password" : "Show password");
+        button.setAttribute("aria-pressed", String(show));
+    }
 </script>
 
 </body>
 </html>
-
