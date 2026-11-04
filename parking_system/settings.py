@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,7 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-372&0^l#kqx^1g^53l4k#(nx^fulf#(lc_(k^mj*4d6#7w)pud'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
+if not SECRET_KEY:
+    raise ValueError("DJANGO_SECRET_KEY is missing from .env")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

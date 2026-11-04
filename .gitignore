@@ -22,3 +22,5 @@ payment_backup.json
 # Local complaint screenshots/uploads
 media/complaints/
 *.backup.html
+
+!.env.example
