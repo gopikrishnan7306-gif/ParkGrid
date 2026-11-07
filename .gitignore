@@ -24,3 +24,7 @@ media/complaints/
 *.backup.html
 
 !.env.example
+
+media/complaints/
+*.bak
+github_views.txt
